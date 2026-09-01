@@ -1,4 +1,4 @@
-# XFit
+# XFit-sovellus
 
 XFit on kuntoilijoille suunnattu sovellus, jossa käyttäjät voivat luoda ja jakaa harjoituskertoja tai harjoitusohjelmia sekä tarkastella harjoituksiin liittyvää kehitystä. Lisäksi käyttäjä voi ottaa käyttöön muiden käyttäjien harjoituksia tai harjoitusohjelmia sekä tarkastella ja kommentoida niitä.
 
