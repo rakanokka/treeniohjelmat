@@ -1,0 +1,34 @@
+:root {
+	--clr-app-background: #f4f2f1;
+	--clr-black-font: #1c1c1c;
+	--ff-default: "Roboto", Arial, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+body {
+	position: relative;
+	font-family: var(--ff-default);
+	font-size: 14px;
+	line-height: 1.3rem;
+	font-weight: 300;
+	color: var(--clr-black-font);
+	background-color: var(--clr-app-background);
+}
+
+header {
+	& > nav {
+		& > ul {
+			display: flex;
+			list-style-type: none;
+
+		}
+	}
+}
+
