@@ -10,16 +10,16 @@
 
     <header>
         <nav>
-			<a href="{{ url_for('index') }}" class="logo">XFit</a>
+			<a href="{{ url_for('home') }}" class="logo">XFit</a>
             <ul>
-				<li><a href="{{ url_for('index') }}">Etusivu</a></li>
+				<li><a href="{{ url_for('home') }}">Etusivu</a></li>
 				<li><a href="{{ url_for('login') }}">Kirjaudu</a></li>
             </ul>
         </nav>
     </header>
 
-    <main class="container">
-		{{ content }}
+    <main>
+		{% block content %}{% endblock %}
     </main>
 
     <footer>

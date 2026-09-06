@@ -3,15 +3,13 @@ from flask import Flask, render_template
 app = Flask(__name__)
 
 @app.route("/")
-def index():
+def home():
     return render_template(
-        "index.html",
-        content="Home page"
+        "home.html"
     )
 
 @app.route("/login")
 def login():
     return render_template(
-        "login.html",
-        content="Login page"
+        "login.html"
     )
