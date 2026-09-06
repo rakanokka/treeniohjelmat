@@ -19,6 +19,8 @@ env/
 instance/
 storage/
 uploads/
+database/*
+!database/.gitkeep
 
 .pytest_cache/
 .coverage
