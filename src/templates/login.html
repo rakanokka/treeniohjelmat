@@ -3,5 +3,27 @@
 {% block title %}Kirjaudu &ndash; XFit{% endblock %}
 
 {% block content %}
-Login
+<div class="auth-form-container ch">
+	<h2>Kirjaudu sisään</h2>	
+    <div class="form-container">
+		<form method="POST" action="{{ url_for('login') }}">
+			<div class="grid-container grid-2-2">
+				<label for="username">Käyttäjätunnus</label>
+				<input type="text" id="username" name="username" required>
+				<label for="password">Salasana</label>
+				<input type="password" id="password" name="password" required>
+			</div>
+			<div class="form-submit">
+				<button type="submit" class="btn btn-primary">Kirjaudu</button>
+			</div>
+		</form>
+		<p class="alt-text">
+			Eikö sinulla ole vielä tiliä? 
+			<a href="{{ url_for('register') }}">Rekisteröidy täällä</a>
+		</p>
+	</div>
+	{% if error %}
+    <div class="alert-error">{{ error }}</div>
+    {% endif %}
+</div>
 {% endblock %}

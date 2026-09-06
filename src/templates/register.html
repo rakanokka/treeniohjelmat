@@ -3,5 +3,31 @@
 {% block title %}Rekisteröidy &ndash; XFit{% endblock %}
 
 {% block content %}
-Register
+<div class="auth-form-container ch">
+	<h2>Luo uusi tili</h2>	
+    <div class="form-container">
+		<form method="POST" action="{{ url_for('register') }}">
+			<div class="grid-container grid-4-2">
+				<label for="username">Käyttäjätunnus</label>
+				<input type="text" id="username" name="username" required>
+				<label for="email">Sähköposti</label>
+				<input type="email" id="email" name="email" required>
+				<label for="password1">Salasana</label>
+				<input type="password" id="password1" name="password1" required>
+				<label for="password2">Salasana uudelleen</label>
+				<input type="password" id="password2" name="password2" required>
+			</div>
+			<div class="form-submit">
+				<button type="submit" class="btn btn-primary">Rekisteröidy</button>
+			</div>
+		</form>
+		<p class="alt-text">
+			Onko sinulla jo tili? 
+			<a href="{{ url_for('login') }}">Kirjaudu sisään</a>
+		</p>
+	</div>
+	{% if error %}
+    <div class="alert-error">{{ error }}</div>
+    {% endif %}
+</div>
 {% endblock %}

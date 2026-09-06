@@ -1,9 +1,9 @@
 import logging
-from pathlib import Path
-from flask import Flask, Response, make_response, redirect, render_template, g, current_app, request, session, url_for
 import sqlite3
-from werkzeug.security import check_password_hash, generate_password_hash
 from typing import Any
+from pathlib import Path
+from flask import Flask, redirect, render_template, g, current_app, request, session, url_for
+from werkzeug.security import check_password_hash, generate_password_hash
 
 # TODO: Sanity checks to ensure the paths/files exist
 PROJECT_ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -72,16 +72,6 @@ def migrate_database():
 @app.route("/")
 def home() -> str:
     return render_template("home.html")
-
-@app.route("/register_")
-def registe_r() -> str:
-    return render_template(
-        "register_.html")
-
-
-@app.route("/login_")
-def login_() -> str:
-    return render_template("login_.html")
 
 @app.route("/register", methods=["GET", "POST"])
 def register() -> str | Any:

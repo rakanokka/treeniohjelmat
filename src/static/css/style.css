@@ -1,8 +1,8 @@
 :root {
 	--clr-app-background: #f4f2f1;
-	--clr-black-font: #1c1c1c;
+	--clr-font-dark: #1c1c1c;
 	--ff-default: "Roboto", Arial, sans-serif;
-	--sz-padding-v: 2rem;
+	--pvh-app-layout: 2rem;
 }
 
 *,
@@ -26,28 +26,81 @@ body {
 	font-size: 14px;
 	line-height: 1.3rem;
 	font-weight: 300;
-	color: var(--clr-black-font);
+	color: var(--clr-font-dark);
 	background-color: var(--clr-app-background);
 }
 
 header {
-	padding: var(--sz-padding-v);
+	padding: var(--pvh-app-layout);
 	& > nav {
 		display: flex;
 		justify-content: space-between;
 		& > ul {
 			display: flex;
+			gap: 1rem;
 			list-style-type: none;
-
 		}
 	}
 }
 
 main {
-	padding: var(--sz-padding-v);
+	padding: var(--pvh-app-layout);
 	flex-grow: 1;
+	border: blue 1px solid;
 }
 
 footer {
-	padding: var(--sz-padding-v);
+	padding: var(--pvh-app-layout);
+}
+
+.btn {
+	min-width: 7rem;
+	padding: 3px 0;
+	font-weight: 700;
+	
+	.btn-primary {
+		background: #546845;	
+	}
+}
+
+.ch {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+}
+
+/* Register/login page styles */
+
+.auth-form-container {
+
+	.form-container {
+		padding: 2rem;
+		form {
+			.grid-container {
+				display: grid;
+				gap: 7px;
+				&.grid-2-2 {
+					grid-template-columns: 7rem auto;
+					grid-template-rows: repeat(2, 1fr);
+				}
+				&.grid-4-2 {
+					grid-template-columns: 9rem auto;
+					grid-template-rows: repeat(4, 1fr);
+				}
+				input {
+					display: block;
+				}
+			}
+			.form-submit {
+				display: flex;
+				justify-content: center;
+				padding: 7px 0;
+			}
+		}
+	}
+
+	.alt-text {
+
+	}
 }
