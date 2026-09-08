@@ -1,8 +1,8 @@
+import sqlite3
 from flask import Flask
-
-from src.utils import debug_assert
-from .utils import set_log_filters, RemoveStaticLogs, get_filepath, debug_output, debug_assert
-from .repository import sql_handler
+from pathlib import Path
+from .utils import set_log_filters, RemoveStaticLogs, debug_output, debug_assert
+from .repository import close_sql_connection
 
 #def create_app():
 #    app = Flask(__name__)
@@ -10,57 +10,80 @@ from .repository import sql_handler
 #        init_db()
 #    return app
 app = Flask(__name__)
+app.teardown_appcontext(close_sql_connection)
+
 set_log_filters("werkzeug", [
     RemoveStaticLogs()
 ])
 
-@app.teardown_appcontext
-def close_database(e = None):
-    sql_handler.close_connection()
+DB_FILENAME_DEV = "xfit_dev.db"
+DB_FILEPATH_DEV = f"database/{DB_FILENAME_DEV}"
+DB_PATH_DEV = Path(DB_FILEPATH_DEV)
+debug_assert(DB_PATH_DEV.exists(), f"Create: {DB_FILEPATH_DEV}")
 
-DB_NAME = "xfit.db"
+def debug_execute_sql(sql: str):
+    with sqlite3.connect(DB_PATH_DEV) as connection:
+        connection.execute(sql)
+        connection.commit()
 
-def remove_database():
-    path_result = get_filepath(f"database/{DB_NAME}")
-    if path_result.valid:
-        close_database()
-        path = path_result.path
-        if path.exists():
-            path.unlink()
-            debug_output(f"Database {path.name} removed")
-    else:
-        debug_assert(False, path_result.error)
+def debug_execute_sql_file(filepath: str):
+    with sqlite3.connect(DB_PATH_DEV) as connection:
+        with open(Path(filepath), mode="r", encoding="utf-8") as file:
+            connection.executescript(file.read())
 
-def empty_database():
-    remove_database() 
-    sql_handler.execute_file("db/schema.sql")
-    debug_output(f"Empty database {DB_NAME} created")
+def debug_batch_commit(filepaths: list[str]):
+    # Major hack! It appears executescript() writes a COMMIT before and after each invokation,
+    # making transaction is unusable since we couldn't rollback in case of a failure
+    combined_sql = ""
+    for filepath in filepaths:    
+        with open(Path(filepath), mode="r", encoding="utf-8") as file:
+            combined_sql += f"{file.read()}\n"
+    with sqlite3.connect(DB_PATH_DEV) as connection:
+        connection.executescript(combined_sql)
 
-def seed_database():
-    sql_handler.execute_file("db/seed.sql")
-    debug_output(f"Seed database {DB_NAME} complete")
+def debug_delete_users():
+    debug_execute_sql('DELETE FROM "user"') 
+    debug_output(f"User data from {DB_FILENAME_DEV} deleted")
 
-@app.cli.command("db-remove")
-def db_remove_cli():
-    debug_output("--- db-remove ---")
-    remove_database()
+def debug_delete_all_data():
+    debug_execute_sql_file("src/db/flush.sql") 
+    debug_output(f"All data from {DB_FILENAME_DEV} deleted")
 
-@app.cli.command("db-empty")
-def db_empty_cli():
-    debug_output("--- db-empty ---")
-    empty_database()
+def debug_reset_database():
+    debug_batch_commit(["src/db/flush.sql", "src/db/schema.sql"])
+    debug_output(f"Database {DB_FILENAME_DEV} reset")
+
+def debug_seed_database():
+    debug_execute_sql_file("src/db/seed.sql")
+    debug_output(f"Database {DB_FILENAME_DEV} seed complete")
+
+@app.cli.command("db-delete-users")
+def db_delete_users_cli():
+    debug_output("--- db-delete-users ---")
+    debug_delete_users()
+
+@app.cli.command("db-delete-all-data")
+def db_delete_all_data_cli():
+    debug_output("--- db-delete-all-data ---")
+    debug_delete_all_data()
+
+@app.cli.command("db-reset")
+def db_reset_cli():
+    debug_output("--- db-reset ---")
+    debug_reset_database()
 
 @app.cli.command("db-seed")
 def db_seed_cli():
     debug_output("--- db-seed ---")
-    seed_database()
+    debug_seed_database()
 
 @app.cli.command("db-migrate")
 def migrate_database():
-    # For development only!
-    # A real app would use versioning in migration. Not sure if Flask supports that. 
-    # Anyway, in a toy app simply removing the old db and replacing it with the updated one 
-    # will do
+    # For development only! A real app would use versioning in migration. 
     debug_output("--- db-migrate ---")
-    empty_database()
-    seed_database()
+    debug_batch_commit([
+        "src/db/flush.sql", 
+        "src/db/schema.sql",
+        "src/db/seed.sql"
+    ])
+    debug_output(f"Database {DB_FILENAME_DEV} migration complete")

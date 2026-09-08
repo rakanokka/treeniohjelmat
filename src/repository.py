@@ -1,53 +1,57 @@
 import sqlite3
-from typing import Any, cast
+from typing import Any
 from pathlib import Path
-from flask import g, current_app
-from .utils import debug_output, get_filepath, debug_assert
+from flask import g
+from .utils import debug_output
 
-class SqlHandler:
-    
-    def __init__(self, db_path: Path):
-        self.db_path = db_path
-    
-    def connect(self) -> sqlite3.Connection:
-        debug_output("Trying to connect to database...")
-        if not ("db" in g):
-            debug_output("Connecting to database...")
-            g.db = sqlite3.connect(self.db_path, detect_types=sqlite3.PARSE_DECLTYPES)
-            g.db.row_factory = sqlite3.Row 
-            g.db.execute("PRAGMA foreign_keys = ON;")
-        return g.db
+CONNECTION_KEY = "sqlite_connection"
 
-    def close_connection(self):
-        debug_output("Trying to close database...")
-        db = g.pop("db", None)
-        if not (db is None):
-            debug_output("Closing database...")
-            db.close()
+def get_sql_connection(path: Path) -> sqlite3.Connection:
+    if not(CONNECTION_KEY in g):
+        debug_output("Connecting to database...")
+        connection = sqlite3.connect(path)
+        connection.row_factory = sqlite3.Row
+        setattr(g, CONNECTION_KEY, connection)
+    return getattr(g, CONNECTION_KEY)
+
+def close_sql_connection(e = None):
+    connection = g.pop(CONNECTION_KEY, None)
+    if not(connection is None):
+        debug_output("Closing database...")
+        connection.close()
+
+
+class SqlQueryHandler:
+
+    def __init__(self, filepath: str):
+        self.db_path = Path(filepath)
 
     # TODO: SqlQueryResult type
-    def execute_sql(self, sql: str, params: list[str]) -> Any:
-        connection = self.connect()
+    def execute_sql(self, sql: str) -> Any:
+        connection = get_sql_connection(self.db_path)
+        result = connection.execute(sql)
+        connection.commit()
+        return result
+
+    def execute_sql_params(self, sql: str, params: list[str]) -> Any:
+        connection = get_sql_connection(self.db_path)
         result = connection.execute(sql, params)
         connection.commit()
         return result   
 
-    def execute_file(self, sql_filename: str):
-        connection = self.connect()
-        with current_app.open_resource(sql_filename) as file:
-            connection.executescript(file.read().decode("utf8"))
+    def execute_sql_file(self, filepath: str):
+        connection = get_sql_connection(self.db_path)
+        with open(Path(filepath), mode="r", encoding="utf-8") as file:
+            connection.executescript(file.read())
 
     def insert_user(self, username: str, email: str, pw_hash: str):
         sql = 'INSERT INTO "user" (username, email, password_hash) VALUES (?, ?, ?)'
-        self.execute_sql(sql, [username, email, pw_hash])
+        self.execute_sql_params(sql, [username, email, pw_hash])
 
     def get_user_by_username(self, username: str) -> Any:
         sql = 'SELECT id, password_hash FROM "user" WHERE username = ?'
-        result = self.execute_sql(sql, [username]).fetchone()
-        return result
+        rows = self.execute_sql_params(sql, [username])
+        # TODO: Sanity check
+        return rows.fetchone()
 
-path_result = get_filepath("database/xfit.db")
-debug_assert(path_result.valid, path_result.error)
-sql_handler = SqlHandler(cast(Path, path_result.path))
-
-
+sql_handler = SqlQueryHandler("database/xfit_dev.db")
