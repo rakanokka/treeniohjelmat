@@ -49,7 +49,7 @@ class SqlQueryHandler:
         self.execute_sql_params(sql, [username, email, pw_hash])
 
     def get_user_by_username(self, username: str) -> Any:
-        sql = 'SELECT id, password_hash FROM "user" WHERE username = ?'
+        sql = 'SELECT id, username, password_hash FROM "user" WHERE username = ?'
         rows = self.execute_sql_params(sql, [username])
         # TODO: Sanity check
         return rows.fetchone()

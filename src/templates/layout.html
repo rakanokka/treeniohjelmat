@@ -13,8 +13,18 @@
 			<a href="{{ url_for('home') }}" class="logo">XFit</a>
             <ul>
 				<li><a href="{{ url_for('home') }}">Etusivu</a></li>
+				{% if session.get('user_id') %}
+				<li><a href="#">{{ session.get('username') }}</a></li>
+				{# We want POST, not GET #}
+				<form class="link-button" action="{{ url_for('logout') }}" method="POST">
+					<button type="submit">
+						Kirjaudu ulos
+					</button>
+				</form>	
+				{% else %}
 				<li><a href="{{ url_for('login') }}">Kirjaudu</a></li>
 				<li><a href="{{ url_for('register') }}">Rekisteröidy</a></li>
+				{% endif %}
             </ul>
         </nav>
     </header>

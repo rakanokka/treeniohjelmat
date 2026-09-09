@@ -59,7 +59,7 @@ footer {
 	font-weight: 700;
 	
 	.btn-primary {
-		background: #546845;	
+		background: #546845;
 	}
 }
 
@@ -68,6 +68,16 @@ footer {
 	flex-direction: column;
 	justify-content: center;
 	align-items: center;
+}
+
+.link-button {
+	display: inline;
+	button {
+		font-size: 14px;
+		background :none; 
+		border :none; 
+		cursor :pointer;
+	}
 }
 
 /* Register/login page styles */

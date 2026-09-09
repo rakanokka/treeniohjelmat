@@ -10,6 +10,8 @@ from .repository import close_sql_connection
 #        init_db()
 #    return app
 app = Flask(__name__)
+# TODO: Read from env file
+app.secret_key = "rDIP7NzAOQZZa61rfGpV1LnT9H5PzZor3FZth3Om6XA="
 app.teardown_appcontext(close_sql_connection)
 
 set_log_filters("werkzeug", [
@@ -33,7 +35,7 @@ def debug_execute_sql_file(filepath: str):
 
 def debug_batch_commit(filepaths: list[str]):
     # Major hack! It appears executescript() writes a COMMIT before and after each invokation,
-    # making transaction is unusable since we couldn't rollback in case of a failure
+    # making transaction unusable since we couldn't rollback in case of a failure
     combined_sql = ""
     for filepath in filepaths:    
         with open(Path(filepath), mode="r", encoding="utf-8") as file:
