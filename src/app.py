@@ -47,17 +47,13 @@ def debug_delete_users():
     debug_execute_sql('DELETE FROM "user"') 
     debug_output(f"User data from {DB_FILENAME_DEV} deleted")
 
-def debug_delete_all_data():
-    debug_execute_sql_file("src/db/flush.sql") 
-    debug_output(f"All data from {DB_FILENAME_DEV} deleted")
-
 def debug_reset_database():
     debug_batch_commit(["src/db/flush.sql", "src/db/schema.sql"])
     debug_output(f"Database {DB_FILENAME_DEV} reset")
 
-def debug_seed_database():
-    debug_execute_sql_file("src/db/seed.sql")
-    debug_output(f"Database {DB_FILENAME_DEV} seed complete")
+def debug_run_file(filepath: str, info: str):
+    debug_execute_sql_file(filepath)
+    debug_output(info)
 
 @app.cli.command("db-delete-users")
 def db_delete_users_cli():
@@ -67,17 +63,17 @@ def db_delete_users_cli():
 @app.cli.command("db-delete-all-data")
 def db_delete_all_data_cli():
     debug_output("--- db-delete-all-data ---")
-    debug_delete_all_data()
+    debug_run_file("src/db/flush.sql", f"All data from {DB_FILENAME_DEV} deleted")
 
 @app.cli.command("db-reset")
 def db_reset_cli():
     debug_output("--- db-reset ---")
     debug_reset_database()
 
-@app.cli.command("db-seed")
-def db_seed_cli():
-    debug_output("--- db-seed ---")
-    debug_seed_database()
+@app.cli.command("db-seed-workout")
+def db_seed_workout_cli():
+    debug_output("--- db-seed-workout ---")
+    debug_run_file("src/db/seed_workout.sql", f"Database {DB_FILENAME_DEV} seed complete")
 
 @app.cli.command("db-migrate")
 def migrate_database():
