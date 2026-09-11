@@ -11,6 +11,17 @@ def home() -> str:
     #debug_output(session)
     return render_template("home.html")
 
+@app.route("/exercises", methods=["GET"])
+def exercises() -> str:
+    user_id = session["user_id"]
+    # TODO: Add support for batch commands
+    my_exercises = sql_handler.get_user_exercises(user_id)
+    all_exercises = sql_handler.get_all_exercises()
+    return render_template(
+            "exercises.html",
+            my_exercises = my_exercises,
+            all_exercises = all_exercises)
+
 @app.route("/register", methods=["GET", "POST"])
 def register() -> str | Any:
     if request.method == "POST":

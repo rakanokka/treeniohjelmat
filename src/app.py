@@ -28,8 +28,8 @@ def debug_execute_sql(sql: str):
         connection.execute(sql)
         connection.commit()
 
-def debug_execute_sql_file(filepath: str):
-    with sqlite3.connect(DB_PATH_DEV) as connection:
+def debug_execute_sql_file(filepath: str, db_path = DB_PATH_DEV):
+    with sqlite3.connect(db_path) as connection:
         with open(Path(filepath), mode="r", encoding="utf-8") as file:
             connection.executescript(file.read())
 
@@ -43,45 +43,16 @@ def debug_batch_commit(filepaths: list[str]):
     with sqlite3.connect(DB_PATH_DEV) as connection:
         connection.executescript(combined_sql)
 
-def debug_delete_users():
-    debug_execute_sql('DELETE FROM "user"') 
-    debug_output(f"User data from {DB_FILENAME_DEV} deleted")
-
-def debug_reset_database():
-    debug_batch_commit(["src/db/flush.sql", "src/db/schema.sql"])
-    debug_output(f"Database {DB_FILENAME_DEV} reset")
-
-def debug_run_file(filepath: str, info: str):
+def debug_run_file(filepath: str):
     debug_execute_sql_file(filepath)
-    debug_output(info)
+    debug_output(f"Run file {filepath} complete")
 
-@app.cli.command("db-delete-users")
-def db_delete_users_cli():
-    debug_output("--- db-delete-users ---")
-    debug_delete_users()
-
-@app.cli.command("db-delete-all-data")
+@app.cli.command("db-run-schema")
 def db_delete_all_data_cli():
-    debug_output("--- db-delete-all-data ---")
-    debug_run_file("src/db/flush.sql", f"All data from {DB_FILENAME_DEV} deleted")
-
-@app.cli.command("db-reset")
-def db_reset_cli():
-    debug_output("--- db-reset ---")
-    debug_reset_database()
+    debug_output("--- db-run-schema ---")
+    debug_run_file("src/db/schema.sql")
 
 @app.cli.command("db-seed-workout")
 def db_seed_workout_cli():
     debug_output("--- db-seed-workout ---")
-    debug_run_file("src/db/seed_workout.sql", f"Database {DB_FILENAME_DEV} seed complete")
-
-@app.cli.command("db-migrate")
-def migrate_database():
-    # For development only! A real app would use versioning in migration. 
-    debug_output("--- db-migrate ---")
-    debug_batch_commit([
-        "src/db/flush.sql", 
-        "src/db/schema.sql",
-        "src/db/seed.sql"
-    ])
-    debug_output(f"Database {DB_FILENAME_DEV} migration complete")
+    debug_run_file("src/db/seed_workout.sql")

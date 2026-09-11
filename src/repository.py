@@ -33,7 +33,7 @@ class SqlQueryHandler:
         connection.commit()
         return result
 
-    def execute_sql_params(self, sql: str, params: list[str]) -> Any:
+    def execute_sql_params(self, sql: str, params: list) -> Any:
         connection = get_sql_connection(self.db_path)
         result = connection.execute(sql, params)
         connection.commit()
@@ -48,10 +48,50 @@ class SqlQueryHandler:
         sql = 'INSERT INTO "user" (username, email, password_hash) VALUES (?, ?, ?)'
         self.execute_sql_params(sql, [username, email, pw_hash])
 
+    # TODO: Ensure that we won't dereference a null pointer with all these rows.fetch calls
+    # TODO: These get-functions should return a proper type
     def get_user_by_username(self, username: str) -> Any:
         sql = 'SELECT id, username, password_hash FROM "user" WHERE username = ?'
         rows = self.execute_sql_params(sql, [username])
-        # TODO: Sanity check
         return rows.fetchone()
+
+    def get_user_exercises(self, user_id: int) -> Any:
+        sql = """
+        SELECT 
+            et.id,
+            et.name,
+            et.target_sets,
+            et.target_reps,
+            et.creator_id,
+            u.username AS creator_name,
+            (et.creator_id = ?) AS is_mine
+        FROM exercise_template et
+        JOIN "user" u ON et.creator_id = u.id
+        ORDER BY 
+            CASE WHEN et.creator_id = ? THEN 0 ELSE 1 END,
+            et.name ASC; 
+        """
+        rows = self.execute_sql_params(sql, [user_id, user_id])
+        return rows.fetchall()
+
+    def get_all_exercises(self, user_id: int) -> Any:
+        sql = """
+        SELECT 
+            et.id AS template_id,
+            et.name AS exercise_name,
+            et.target_sets,
+            et.target_reps,
+            et.order_index,
+            et.creator_id,
+            u.username AS creator_name,
+            wst.description AS workout_template_name
+        FROM exercise_template et
+        JOIN "user" u ON et.creator_id = u.id
+        LEFT JOIN workout_session_template wst ON et.session_template_id = wst.id
+        WHERE et.creator_id != ?
+        ORDER BY et.name ASC;
+        """
+        rows = self.execute_sql_params(sql, [user_id])
+        return rows.fetchall()
 
 sql_handler = SqlQueryHandler("database/xfit_dev.db")
