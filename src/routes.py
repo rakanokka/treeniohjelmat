@@ -1,26 +1,17 @@
 import sqlite3
-from typing import Any
+from typing import Any, NamedTuple
 from flask import render_template, request, redirect, url_for, session
 from werkzeug.security import check_password_hash, generate_password_hash
-from .utils import debug_output
+from .utils import debug_assert, debug_output
 from .repository import sql_handler
 from .app import app
+
+# These routse are public for all users
 
 @app.route("/")
 def home() -> str:
     #debug_output(session)
     return render_template("home.html")
-
-@app.route("/exercises", methods=["GET"])
-def exercises() -> str:
-    user_id = session["user_id"]
-    # TODO: Add support for batch commands
-    my_exercises = sql_handler.get_user_exercises(user_id)
-    all_exercises = sql_handler.get_all_exercises()
-    return render_template(
-            "exercises.html",
-            my_exercises = my_exercises,
-            all_exercises = all_exercises)
 
 @app.route("/register", methods=["GET", "POST"])
 def register() -> str | Any:
@@ -48,17 +39,86 @@ def login() -> str | Any:
     if request.method == "POST":
         username = request.form["username"]
         password = request.form["password"]
-        user = sql_handler.get_user_by_username(username) 
-        if user and check_password_hash(user["password_hash"], password):
-            session["user_id"] = user["id"]
-            session["username"] = user["username"]
+        r = sql_handler.get_user_by_username(username) 
+        if r.success and check_password_hash(r.data["password_hash"], password): 
+            session["user_id"] = r.data["id"]
+            session["username"] = r.data["username"]
             return redirect(url_for("home"))
         return render_template(
                     "login.html",
                     error = "Invalid username or password.")
     return render_template("login.html")
 
+# These routes are auth-protected
+
+def error_page(message: str) -> str:
+    return render_template("error.html", message = message)
+
 @app.route("/logout", methods=["POST"])
-def logout() -> Any:
+def logout() -> Any: 
     session.clear()
     return redirect(url_for("home"))
+
+@app.route("/exercises", methods=["GET"])
+def exercises() -> str:
+    if not("user_id" in session):
+        #TODO: Is it okay to stay at /exercises while displaying an error page???
+        # Or do we create a common route for error pages, like /error ??
+        # Check the standard to see what is the "conventional" way
+        return error_page("Unauthorized access")
+    user_id = session["user_id"]
+    query_result = sql_handler.get_exercise_logs(user_id)
+    if query_result.success:
+        return render_template("exercises.html", 
+                               exercises = query_result.data,
+                               error = None)
+    return render_template("exercises.html", 
+                           exercises = [],
+                           error = query_result.data)
+
+@app.route("/exercises/create", methods=["GET", "POST"])
+def exercises_create() -> str | Any:
+    if not("user_id" in session):
+        return error_page("Unauthorized access")
+    user_id = session["user_id"]
+    if request.method == "POST":
+        name = request.form.get("name", "").strip() 
+        target_sets = int(request.form["target_sets"])
+        target_reps = int(request.form["target_reps"])
+        sql_handler.insert_exercise_template(user_id, name, target_sets, target_reps)
+    query_result = sql_handler.get_exercise_templates(user_id)
+    if query_result.success:
+        return render_template("create-exercise.html", 
+                               templates = query_result.data,
+                               error = None)
+    return render_template("create-exercise.html", 
+                           templates = [],
+                           error = query_result.data)
+
+class SearchModel(NamedTuple):
+    query: str 
+    mine: bool
+
+@app.route("/exercises/search", methods=["GET"])
+def exercises_search() -> str:
+    if not("user_id" in session):
+        return error_page("Unauthorized access")
+    search_query = request.args.get("query", "").strip() 
+    if search_query:
+        user_id = session["user_id"]
+        search_result = sql_handler.get_exercise_templates_by_name(search_query, user_id)
+        templates = [] 
+        error: str | None = None
+        if search_result.success:
+            templates = search_result.data
+        else:    
+            error = str(search_result.data)
+        return render_template("search-exercises.html",
+                               search_query = search_query,
+                               templates = templates,
+                               error = error)
+    return render_template("search-exercises.html", 
+                           search_query = "",
+                           templates = [],
+                           error = None)
+

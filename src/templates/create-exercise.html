@@ -1,0 +1,51 @@
+{% extends "layout.html" %}
+
+{% block title %}Liikkeet &ndash; XFit{% endblock %}
+
+{% block content %}
+<div class="exercises-nav">
+	<ul class="no-bullets">
+		<li><a href="{{ url_for('exercises') }}">Harjoitukset</a></li>
+		<li><a href="{{ url_for('exercises_search') }}">Etsi liikkeitä</a></li>
+    </ul>
+</div>
+<div class="page-container">
+	<h2>Luo uusi liike</h2>
+	<form action="{{ url_for('exercises_create') }}" method="POST" class="form-stacked">
+        <label for="name">Liikkeen nimi:</label>
+        <input type="text" id="name" name="name" required>
+
+        <label for="target_sets">Sarjatavoite:</label>
+        <input type="number" id="target_sets" name="target_sets" min="1" value="3" required>
+
+        <label for="target_reps">Toistotavoite:</label>
+        <input type="number" id="target_reps" name="target_reps" min="1" value="10" required>
+
+        <button type="submit" class="btn">Luo</button>
+    </form>
+	<br>
+	<h2>Omat liikkeet</h2>
+	<div class="list-container">
+	{% for e in templates %}	
+		<div class="list-item exercise-item">
+			<p class="item-name">{{ e.name }}</p>
+			<div class="item-info-entry">
+				<p class="key">Sarjat:</p>	
+				<p class="value">{{ e.sets }}</p>	
+			</div>
+			<div class="item-info-entry">
+				<p class="key">Toistot:</p>	
+				<p class="value">{{ e.reps }}</p>	
+			</div>
+			<div class="item-extra">
+				<span>[Harjoituksessa?]</span>
+				<span>[Käyttäjien määrä]</span>
+				<span>[Tarkastele-painike]</span>
+			</div>
+		</div>
+	{% endfor %}
+	</div>
+	<br>
+	<h2>Muiden liikkeet</h2>
+</div>
+{% endblock %}

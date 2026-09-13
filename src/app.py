@@ -1,7 +1,7 @@
 import sqlite3
 from flask import Flask
 from pathlib import Path
-from .utils import set_log_filters, RemoveStaticLogs, debug_output, debug_assert
+from .utils import set_log_filters, RemoveStaticLogs, RemoveChromeDevtoolLogs, debug_output, debug_assert
 from .repository import close_sql_connection
 
 #def create_app():
@@ -15,7 +15,8 @@ app.secret_key = "rDIP7NzAOQZZa61rfGpV1LnT9H5PzZor3FZth3Om6XA="
 app.teardown_appcontext(close_sql_connection)
 
 set_log_filters("werkzeug", [
-    RemoveStaticLogs()
+    RemoveStaticLogs(),
+    RemoveChromeDevtoolLogs()
 ])
 
 DB_FILENAME_DEV = "xfit_dev.db"

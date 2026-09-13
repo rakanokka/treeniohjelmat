@@ -1,8 +1,9 @@
 :root {
 	--clr-app-background: #f4f2f1;
 	--clr-font-dark: #1c1c1c;
+	--clr-divisor: #5b5757;
 	--ff-default: "Roboto", Arial, sans-serif;
-	--pvh-app-layout: 2rem;
+	--pvh-app-layout: 2rem;  /* padding-vert-horiz */
 }
 
 *,
@@ -30,15 +31,18 @@ body {
 	background-color: var(--clr-app-background);
 }
 
+ul.no-bullets {
+	list-style-type: none;
+}
+
 header {
 	padding: var(--pvh-app-layout);
-	& > nav {
+	nav {
 		display: flex;
 		justify-content: space-between;
-		& > ul {
+		ul {
 			display: flex;
 			gap: 1rem;
-			list-style-type: none;
 		}
 	}
 }
@@ -63,6 +67,7 @@ footer {
 	}
 }
 
+/* center-horizontal */
 .ch {
 	display: flex;
 	flex-direction: column;
@@ -80,12 +85,16 @@ footer {
 	}
 }
 
+.page-container {
+	padding-top: var(--pvh-app-layout);
+	padding-bottom: var(--pvh-app-layout);
+}
+
 /* Register/login page styles */
 
 .auth-form-container {
 
 	.form-container {
-		padding: 2rem;
 		form {
 			.grid-container {
 				display: grid;
@@ -112,5 +121,46 @@ footer {
 
 	.alt-text {
 
+	}
+}
+
+/* Exercises page styles */
+
+.exercises-nav {
+	ul {
+		display: flex;
+		gap: 1rem;
+		li {
+			&.active {
+				font-weight: 700;
+			}
+		}
+	}
+}
+
+.exercises-search-container {
+	padding: 1rem 0;
+	border-bottom: 1px solid var(--clr-divisor);
+}
+
+.exercise-item {
+	display: flex;
+	gap: 2rem;
+	padding: 1rem 0;
+	border-bottom: 1px solid var(--clr-divisor);
+	&.is-mine {
+		/*background-color: rgb(100, 100, 255);*/
+	}
+	.item-name {
+		font-weight: 700;
+	}
+	.item-info-entry {
+		display: flex;
+		gap: 10px;
+	}
+	.item-extra {
+		margin-left: auto;
+		display: flex;
+		gap: 10px;
 	}
 }
