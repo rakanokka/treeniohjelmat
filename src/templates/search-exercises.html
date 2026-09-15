@@ -33,7 +33,10 @@
 			<div class="item-extra">
 				<span>[Käyttäjien määrä]</span>
 				<span>[Tarkastele-painike]</span>
-				<span>[Ota käyttöön -painike]</span>
+				<form action="{{ url_for('exercises_add_template') }}" method="POST">
+					<input type="hidden" name="template_id" value="{{ e.id }}">
+					<button class="btn" type="submit">Ota käyttöön</button>
+				</form>
 			</div>
 		</div>
 	{% endfor %}

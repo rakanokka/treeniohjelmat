@@ -26,7 +26,7 @@
 	<br>
 	<h2>Omat liikkeet</h2>
 	<div class="list-container">
-	{% for e in templates %}	
+	{% for e in my_templates %}	
 		<div class="list-item exercise-item">
 			<p class="item-name">{{ e.name }}</p>
 			<div class="item-info-entry">
@@ -46,6 +46,29 @@
 	{% endfor %}
 	</div>
 	<br>
-	<h2>Muiden liikkeet</h2>
+	<h2>Käyttöön otetut liikkeet</h2>
+	<div class="list-container">
+	{% for e in adopted_templates %}	
+		<div class="list-item exercise-item">
+			<p class="item-name">{{ e.name }}</p>
+			<div class="item-info-entry">
+				<p class="key">Sarjat:</p>	
+				<p class="value">{{ e.sets }}</p>	
+			</div>
+			<div class="item-info-entry">
+				<p class="key">Toistot:</p>	
+				<p class="value">{{ e.reps }}</p>	
+			</div>
+			<div class="item-extra">
+				<span>[Harjoituksessa?]</span>
+				<span>[Käyttäjien määrä]</span>
+				<span>[Tarkastele-painike]</span>
+			</div>
+		</div>
+	{% endfor %}
+	</div>
+	{% if error %}
+	{{ error }}
+	{% endif %}
 </div>
 {% endblock %}

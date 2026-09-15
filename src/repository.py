@@ -75,7 +75,8 @@ class SqlQueryHandler:
         connection = get_sql_connection(self.db_path)
         with open(Path(filepath), mode="r", encoding="utf-8") as file:
             connection.executescript(file.read())
-
+    
+    # TODO: All exposed functions must return a result so that the UI can handle the possible error
     def insert_user(self, username: str, email: str, pw_hash: str):
         sql = 'INSERT INTO "user" (username, email, password_hash) VALUES (?, ?, ?)'
         self.execute_sql_params(sql, [username, email, pw_hash])
@@ -115,28 +116,28 @@ class SqlQueryHandler:
         if cursor.valid():
             return SqlQueryResult(True, cursor.all())
         return SqlQueryResult(False, cursor.error_message())
- 
-    def get_available_shared_templates(self, user_id: int) -> SqlQueryResult:
+
+    def get_adopted_exercise_templates(self, user_id: int) -> SqlQueryResult:
         sql = """
         SELECT 
-            et.id AS id,
-            et.name AS name,
-            et.target_sets AS sets,
-            et.target_reps AS reps,
-            et.creator_id AS creator_id,
+            e.id AS id,
+            e.name AS name,
+            e.target_sets AS sets,
+            e.target_reps AS reps,
+            e.creator_id AS creator_id,
             u.username AS creator_name
-        FROM exercise_template et
+        FROM user_exercise_template uet
+        JOIN exercise_template e 
+            ON uet.exercise_template_id = e.id
         JOIN "user" u 
-            ON et.creator_id = u.id
-        LEFT JOIN user_adopted_template uat 
-            ON et.id = uat.template_id AND uat.user_id = ?
-        WHERE et.creator_id != ? AND uat.template_id IS NULL
-        ORDER BY et.name ASC;
+            ON e.creator_id = u.id
+        WHERE uet.user_id = ?
+        ORDER BY e.name ASC;
         """
-        cursor = self.execute_sql_params(sql, [user_id, user_id])
+        cursor = self.execute_sql_params(sql, [user_id])
         if cursor.valid():
             return SqlQueryResult(True, cursor.all())
-        return SqlQueryResult(False, cursor.error_message())
+        return SqlQueryResult(False, cursor.error_message()) 
 
     def get_exercise_logs(self, user_id: int) -> SqlQueryResult:
         sql = """

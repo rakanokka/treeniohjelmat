@@ -1,6 +1,6 @@
 import sqlite3
 from typing import Any, NamedTuple
-from flask import render_template, request, redirect, url_for, session
+from flask import render_template, request, redirect, template_rendered, url_for, session
 from werkzeug.security import check_password_hash, generate_password_hash
 from .utils import debug_assert, debug_output
 from .repository import sql_handler
@@ -49,10 +49,27 @@ def login() -> str | Any:
                     error = "Invalid username or password.")
     return render_template("login.html")
 
-# These routes are auth-protected
+class IntValidator:
+    def __init__(self, input_value: Any):
+        self.input_value = input_value 
+        self.validated = 0
+
+    def validate(self) -> bool:
+        result = True;
+        try: 
+            self.validated = int(self.input_value)
+        # Must catch all exceptions 
+        except Exception:
+            result = False
+        return result
+
+    def get(self) -> int:
+        return self.validated
 
 def error_page(message: str) -> str:
     return render_template("error.html", message = message)
+
+# These routes are auth-protected
 
 @app.route("/logout", methods=["POST"])
 def logout() -> Any: 
@@ -62,16 +79,18 @@ def logout() -> Any:
 @app.route("/exercises", methods=["GET"])
 def exercises() -> str:
     if not("user_id" in session):
-        #TODO: Is it okay to stay at /exercises while displaying an error page???
-        # Or do we create a common route for error pages, like /error ??
-        # Check the standard to see what is the "conventional" way
         return error_page("Unauthorized access")
-    user_id = session["user_id"]
+    user_validator = IntValidator(session["user_id"])
+    if not user_validator.validate():
+        return error_page("Server error: invalid user id")
+    user_id = user_validator.get()
+    
     query_result = sql_handler.get_exercise_logs(user_id)
     if query_result.success:
         return render_template("exercises.html", 
                                exercises = query_result.data,
                                error = None)
+    
     return render_template("exercises.html", 
                            exercises = [],
                            error = query_result.data)
@@ -80,32 +99,59 @@ def exercises() -> str:
 def exercises_create() -> str | Any:
     if not("user_id" in session):
         return error_page("Unauthorized access")
-    user_id = session["user_id"]
+    user_validator = IntValidator(session["user_id"])
+    if not user_validator.validate():
+        return error_page("Server error: invalid user id")
+    user_id = user_validator.get()
+    
     if request.method == "POST":
         name = request.form.get("name", "").strip() 
-        target_sets = int(request.form["target_sets"])
-        target_reps = int(request.form["target_reps"])
+        target_sets_validator = IntValidator(request.form["target_sets"])
+        target_reps_validator = IntValidator(request.form["target_reps"])
+        if not(target_sets_validator.validate() and target_reps_validator.validate()):
+            # TODO: Bind the error with the form
+            return error_page("Invalud user input: integer is required")
+        target_sets = target_sets_validator.get()
+        target_reps = target_reps_validator.get()
         sql_handler.insert_exercise_template(user_id, name, target_sets, target_reps)
-    query_result = sql_handler.get_exercise_templates(user_id)
-    if query_result.success:
+    
+    # TODO: Batch queries
+    my_exercises = sql_handler.get_exercise_templates(user_id)
+    adopted_exercises = sql_handler.get_adopted_exercise_templates(user_id)
+    if my_exercises.success and adopted_exercises.success:
         return render_template("create-exercise.html", 
-                               templates = query_result.data,
+                               my_templates = my_exercises.data,
+                               adopted_templates = adopted_exercises.data,
                                error = None)
+    
+    if my_exercises.success:
+        return render_template("create-exercise.html", 
+                               my_templates = my_exercises.data,
+                               adopted_templates = [],
+                               error = adopted_exercises.data)
+    
+    if adopted_exercises.success:
+        return render_template("create-exercise.html", 
+                               my_templates = [],
+                               adopted_templates = adopted_exercises.data,
+                               error = my_exercises.data)
+    
     return render_template("create-exercise.html", 
-                           templates = [],
-                           error = query_result.data)
-
-class SearchModel(NamedTuple):
-    query: str 
-    mine: bool
+                           my_templates = [],
+                           adopted_templates = [],
+                           error = f"{my_exercises.data}|{adopted_exercises.data}")
 
 @app.route("/exercises/search", methods=["GET"])
 def exercises_search() -> str:
     if not("user_id" in session):
         return error_page("Unauthorized access")
+    user_validator = IntValidator(session["user_id"])
+    if not user_validator.validate():
+        return error_page("Server error: invalid user id")
+    user_id = user_validator.get()
+    
     search_query = request.args.get("query", "").strip() 
     if search_query:
-        user_id = session["user_id"]
         search_result = sql_handler.get_exercise_templates_by_name(search_query, user_id)
         templates = [] 
         error: str | None = None
@@ -117,8 +163,25 @@ def exercises_search() -> str:
                                search_query = search_query,
                                templates = templates,
                                error = error)
+    
     return render_template("search-exercises.html", 
                            search_query = "",
                            templates = [],
                            error = None)
 
+@app.route("/exercises/add-template", methods=["POST"])
+def exercises_add_template() -> Any:
+    if not("user_id" in session):
+        return error_page("Unauthorized access")
+    user_validator = IntValidator(session["user_id"])
+    if not user_validator.validate():
+        return error_page("Server error: invalid user id")
+    user_id = user_validator.get()
+    
+    template_id_validator = IntValidator(request.form.get("template_id", "").strip())
+    if not template_id_validator.validate():
+        # TODO: Better error handlign
+        return error_page("Server error: invalid exercise template id")
+    
+    sql_handler.insert_user_exercise_template(user_id, template_id_validator.get())
+    return redirect(url_for("exercises_search"))
