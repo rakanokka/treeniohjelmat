@@ -1,27 +1,28 @@
 {% extends "layout.html" %}
 
-{% block title %}Harjoitukset &ndash; XFit{% endblock %}
+{% block title %}Treenit &ndash; XFit{% endblock %}
 
 {% block content %}
-<div class="page-nav exercises-nav">
+<div class="page-nav workouts-nav">
 	<ul class="no-bullets">
-		<li><a href="{{ url_for('exercises') }}">Harjoitukset</a></li>
-		<li><a href="{{ url_for('exercises_create') }}">Harjoituspohjat</a></li>
+		<li><a href="{{ url_for('workouts') }}">Treenit</a></li>
+		<li><a href="{{ url_for('workouts_create') }}">Treenipohjat</a></li>
     </ul>
 </div>
 <div class="page-container">
-	<h2>Etsi harjoituspohjia</h2>
-	<div class="exercises-search-container ch">
-		<form action="{{ url_for('exercises_search') }}" method="GET" class="search-input">
+	<h2>Etsi treenipohjia</h2>
+	<div class="workouts-search-container ch">
+		<form action="{{ url_for('workouts_search') }}" method="GET" class="search-input">
 			<input type="text" name="query" value="{{ search_query }}">
 			<button class="btn" type="submit">Hae</button>
 		</form>
 	</div>
 	{% if not error %}
 	<div class="list-container">
-	{% for e in templates %}	
-		<div class="list-item exercise-item">
-			<p class="bold-text">{{ e.name }}</p>
+	{% for w in templates %}	
+		<div class="list-item workout-item">
+			<p class="bold-text">{{ w.description }}</p>
+			{#
 			<div class="item-info-entry">
 				<p class="key">Sarjat:</p>	
 				<p class="value">{{ e.sets }}</p>	
@@ -30,11 +31,12 @@
 				<p class="key">Toistot:</p>	
 				<p class="value">{{ e.reps }}</p>	
 			</div>
+			#}
 			<div class="item-extra">
 				<span>[Käyttäjien määrä]</span>
 				<span>[Tarkastele-painike]</span>
-				<form action="{{ url_for('exercises_add_template') }}" method="POST">
-					<input type="hidden" name="template_id" value="{{ e.id }}">
+				<form action="{{ url_for('workouts_add_template') }}" method="POST">
+					<input type="hidden" name="template_id" value="{{ w.id }}">
 					<button class="btn" type="submit">Ota käyttöön</button>
 				</form>
 			</div>

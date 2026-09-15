@@ -69,12 +69,14 @@ class IntValidator:
 def error_page(message: str) -> str:
     return render_template("error.html", message = message)
 
-# These routes are auth-protected
+# All routes below are auth-protected
 
 @app.route("/logout", methods=["POST"])
 def logout() -> Any: 
     session.clear()
     return redirect(url_for("home"))
+
+# Exercises
 
 @app.route("/exercises", methods=["GET"])
 def exercises() -> str:
@@ -184,4 +186,71 @@ def exercises_add_template() -> Any:
         return error_page("Server error: invalid exercise template id")
     
     sql_handler.insert_user_exercise_template(user_id, template_id_validator.get())
+    return redirect(url_for("exercises_search"))
+
+# Workouts
+
+@app.route("/workouts", methods=["GET"])
+def workouts() -> str:
+    if not("user_id" in session):
+        return error_page("Unauthorized access")
+    user_validator = IntValidator(session["user_id"])
+    if not user_validator.validate():
+        return error_page("Server error: invalid user id")
+    user_id = user_validator.get()
+    
+    query_result = sql_handler.get_workout_logs(user_id)
+    if query_result.success:
+        return render_template("workouts.html", 
+                               workouts = query_result.data,
+                               error = None)
+    
+    return render_template("workouts.html", 
+                           workouts = [],
+                           error = query_result.data)
+
+@app.route("/workouts/create", methods=["GET", "POST"])
+def workouts_create() -> str:
+    if not("user_id" in session):
+        return error_page("Unauthorized access")
+    user_validator = IntValidator(session["user_id"])
+    if not user_validator.validate():
+        return error_page("Server error: invalid user id")
+    user_id = user_validator.get()
+
+    if request.method == "POST":
+        name = request.form.get("name", "").strip() 
+        target_sets_validator = IntValidator(request.form["target_sets"])
+        target_reps_validator = IntValidator(request.form["target_reps"])
+        if not(target_sets_validator.validate() and target_reps_validator.validate()):
+            # TODO: Bind the error with the form
+            return error_page("Invalud user input: integer is required")
+        target_sets = target_sets_validator.get()
+        target_reps = target_reps_validator.get()
+        sql_handler.insert_exercise_template(user_id, name, target_sets, target_reps)
+    
+    return render_template("create-workout.html",
+                           my_templates = [],
+                           adopted_templates = [],
+                           error = None)
+
+@app.route("/workouts/search", methods=["GET"])
+def workouts_search() -> str:
+    return render_template("search-workouts.html")
+
+@app.route("/workouts/add-template", methods=["POST"])
+def workouts_add_template() -> Any:
+    if not("user_id" in session):
+        return error_page("Unauthorized access")
+    user_validator = IntValidator(session["user_id"])
+    if not user_validator.validate():
+        return error_page("Server error: invalid user id")
+    user_id = user_validator.get()
+    
+    template_id_validator = IntValidator(request.form.get("template_id", "").strip())
+    if not template_id_validator.validate():
+        # TODO: Better error handlign
+        return error_page("Server error: invalid exercise template id")
+    
+    #sql_handler.insert_user_exercise_template(user_id, template_id_validator.get())
     return redirect(url_for("exercises_search"))

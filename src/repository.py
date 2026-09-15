@@ -98,6 +98,8 @@ class SqlQueryHandler:
             return SqlQueryResult(True, cursor.one())
         return SqlQueryResult(False, cursor.error_message())
     
+    # Exercises
+
     def get_exercise_templates(self, user_id: int) -> SqlQueryResult:
         sql = """
         SELECT 
@@ -183,5 +185,33 @@ class SqlQueryHandler:
         if cursor.valid():
             return SqlQueryResult(True, cursor.all())
         return SqlQueryResult(False, cursor.error_message()) 
+
+    # Workouts
+    
+    def get_workout_logs(self, user_id: int) -> SqlQueryResult:
+        # TODO: We want notes! Add it into SELECT when we have updated 
+        # the schema and added a default value for it which we forgot to do
+        sql = """
+        SELECT 
+            w.id AS id,
+            w.date AS timestamp,
+            w.description AS description,
+            w.user_id AS creator_id,
+            u.username AS creator_name
+            -- COUNT(DISTINCT e.id) AS exercise_count,
+            -- COALESCE(SUM(e.sets), 0) AS total_sets
+        FROM workout_log w
+        JOIN "user" u 
+            ON w.user_id = u.id
+        LEFT JOIN exercise_log e 
+            ON e.workout_id = w.id
+        WHERE w.user_id = ?
+        GROUP BY w.id, w.date, w.description, w.user_id, u.username
+        ORDER BY w.date DESC;
+        """
+        cursor = self.execute_sql_params(sql, [user_id])
+        if cursor.valid():
+            return SqlQueryResult(True, cursor.all())
+        return SqlQueryResult(False, cursor.error_message())
 
 sql_handler = SqlQueryHandler("database/xfit_dev.db")

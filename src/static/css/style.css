@@ -67,6 +67,14 @@ footer {
 	}
 }
 
+.bold-text {
+	font-weight: 700;
+}
+
+.italic-text {
+	font-style: italic;
+}
+
 /* center-horizontal */
 .ch {
 	display: flex;
@@ -126,7 +134,7 @@ footer {
 
 /* Exercises page styles */
 
-.exercises-nav {
+.page-nav {
 	ul {
 		display: flex;
 		gap: 1rem;
@@ -138,29 +146,33 @@ footer {
 	}
 }
 
-.exercises-search-container {
+.exercises-search-container,
+.workouts-search-container {
 	padding: 1rem 0;
 	border-bottom: 1px solid var(--clr-divisor);
 }
 
-.exercise-item {
+.list-item {
 	display: flex;
 	gap: 2rem;
 	padding: 1rem 0;
 	border-bottom: 1px solid var(--clr-divisor);
-	&.is-mine {
-		/*background-color: rgb(100, 100, 255);*/
+	.item-date {
+		
 	}
 	.item-name {
 		font-weight: 700;
 	}
-	.item-info-entry {
-		display: flex;
-		gap: 10px;
-	}
-	.item-extra {
-		margin-left: auto;
-		display: flex;
-		gap: 10px;
+	&.exercise-item,
+	&.workout-item {
+		.item-info-entry {
+			display: flex;
+			gap: 10px;
+		}
+		.item-extra {
+			margin-left: auto;
+			display: flex;
+			gap: 10px;
+		}
 	}
 }

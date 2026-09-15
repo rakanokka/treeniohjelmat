@@ -1,12 +1,12 @@
 {% extends "layout.html" %}
 
-{% block title %}Liikkeet &ndash; XFit{% endblock %}
+{% block title %}Harjoitukset &ndash; XFit{% endblock %}
 
 {% block content %}
-<div class="exercises-nav">
+<div class="page-nav exercises-nav">
 	<ul class="no-bullets">
-		<li><a href="{{ url_for('exercises_create') }}">Liikkeet</a></li>
-		<li><a href="{{ url_for('exercises_search') }}">Etsi liikkeitä</a></li>
+		<li><a href="{{ url_for('exercises_create') }}">Harjoituspohjat</a></li>
+		<li><a href="{{ url_for('exercises_search') }}">Etsi harjoituspohjia</a></li>
     </ul>
 </div>
 <div class="page-container">
@@ -15,8 +15,8 @@
 	<div class="list-container">
 	{% for e in exercises %}	
 		<div class="list-item exercise-item">
-			<p class="item-name">{{ e.name }}</p>
-			<p>{{ e.notes }}</p>
+			<p class="bold-text">{{ e.name }}</p>
+			<p class="italic-text">{{ e.notes }}</p>
 			<div class="item-extra">
 				<span>[Tarkastele-painike]</span>
 			</div>
