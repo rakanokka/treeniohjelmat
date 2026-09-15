@@ -67,7 +67,7 @@ CREATE TABLE workout_exercise_template (
     FOREIGN KEY (exercise_template_id) REFERENCES exercise_template(id) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS user_exercise_template (
+CREATE TABLE user_exercise_template (
     user_id INTEGER NOT NULL,
     exercise_template_id INTEGER NOT NULL,
     PRIMARY KEY (user_id, exercise_template_id),
