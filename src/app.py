@@ -34,16 +34,6 @@ def debug_execute_sql_file(filepath: str, db_path = DB_PATH_DEV):
         with open(Path(filepath), mode="r", encoding="utf-8") as file:
             connection.executescript(file.read())
 
-def debug_batch_commit(filepaths: list[str]):
-    # Major hack! It appears executescript() writes a COMMIT before and after each invokation,
-    # making transaction unusable since we couldn't rollback in case of a failure
-    combined_sql = ""
-    for filepath in filepaths:    
-        with open(Path(filepath), mode="r", encoding="utf-8") as file:
-            combined_sql += f"{file.read()}\n"
-    with sqlite3.connect(DB_PATH_DEV) as connection:
-        connection.executescript(combined_sql)
-
 def debug_run_file(filepath: str):
     debug_execute_sql_file(filepath)
     debug_output(f"Run file {filepath} complete")
@@ -53,7 +43,12 @@ def db_delete_all_data_cli():
     debug_output("--- db-run-schema ---")
     debug_run_file("src/db/schema.sql")
 
-@app.cli.command("db-seed-workout")
-def db_seed_workout_cli():
-    debug_output("--- db-seed-workout ---")
-    debug_run_file("src/db/seed_workout.sql")
+@app.cli.command("db-seed-users")
+def db_seed_users_cli():
+    debug_output("--- db-seed-users ---")
+    debug_run_file("src/db/seed_users.sql")
+
+@app.cli.command("db-seed-workouts")
+def db_seed_workouts_cli():
+    debug_output("--- db-seed-workouts ---")
+    debug_run_file("src/db/seed_workouts.sql")

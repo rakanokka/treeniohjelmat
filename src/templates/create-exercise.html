@@ -29,6 +29,7 @@
 	{% for e in my_templates %}	
 		<div class="list-item exercise-item">
 			<p class="bold-text">{{ e.name }}</p>
+			<p>{{ e.category }}</p>
 			<div class="item-info-entry">
 				<p class="key">Sarjat:</p>	
 				<p class="value">{{ e.sets }}</p>	
@@ -51,6 +52,7 @@
 	{% for e in adopted_templates %}	
 		<div class="list-item exercise-item">
 			<p class="bold-text">{{ e.name }}</p>
+			<p>{{ e.category }}</p>
 			<div class="item-info-entry">
 				<p class="key">Sarjat:</p>	
 				<p class="value">{{ e.sets }}</p>	

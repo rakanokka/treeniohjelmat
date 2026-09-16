@@ -1,6 +1,6 @@
 import sqlite3
-from typing import Any, NamedTuple
-from flask import render_template, request, redirect, template_rendered, url_for, session
+from typing import Any
+from flask import render_template, request, redirect, url_for, session
 from werkzeug.security import check_password_hash, generate_password_hash
 from .utils import debug_assert, debug_output
 from .repository import sql_handler
@@ -10,7 +10,6 @@ from .app import app
 
 @app.route("/")
 def home() -> str:
-    #debug_output(session)
     return render_template("home.html")
 
 @app.route("/register", methods=["GET", "POST"])

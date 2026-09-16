@@ -44,7 +44,11 @@ class SqlQueryCursor:
         debug_assert(self.valid())
         return cast(sqlite3.Cursor, self.cursor).fetchall()
 
-class SqlQueryResult(NamedTuple):
+    def insert_id(self) -> int:
+        debug_assert(self.valid())
+        return cast(int, cast(sqlite3.Cursor, self.cursor).lastrowid)
+
+class SqlResult(NamedTuple):
     success: bool
     data: Any
 
@@ -76,38 +80,60 @@ class SqlQueryHandler:
         with open(Path(filepath), mode="r", encoding="utf-8") as file:
             connection.executescript(file.read())
     
-    # TODO: All exposed functions must return a result so that the UI can handle the possible error
-    def insert_user(self, username: str, email: str, pw_hash: str):
+    # NOTE: Do not use INSERT OR IGNORE for any of the inserts
+    
+    def insert_user(self, username: str, email: str, pw_hash: str) -> SqlResult:
         sql = 'INSERT INTO "user" (username, email, password_hash) VALUES (?, ?, ?)'
-        self.execute_sql_params(sql, [username, email, pw_hash])
+        cursor = self.execute_sql_params(sql, [username, email, pw_hash])
+        if cursor.valid():
+            return SqlResult(True, cursor.insert_id())
+        return SqlResult(False, cursor.error_message())
 
-    def insert_exercise_template(self, user_id: int, name: str, target_sets: int, target_reps: int):
-        sql = "INSERT INTO exercise_template (creator_id, workout_template_id, name, target_sets, target_reps, order_index) VALUES (?, NULL, ?, ?, ?, 0)"
-        self.execute_sql_params(sql, [user_id, name, target_sets, target_reps])
-
-    def insert_user_exercise_template(self, user_id: int, template_id: int):
+    def insert_exercise_template(self, user_id: int, name: str, target_sets: int, target_reps: int) -> SqlResult:
         sql = """
-        INSERT OR IGNORE INTO user_exercise_template (user_id, exercise_template_id) VALUES (?, ?);
+        INSERT INTO exercise_template (creator_id, name, category, target_sets, target_reps) VALUES (?, ?, ?, ?, ?)
+        """ 
+        cursor = self.execute_sql_params(sql, [user_id, name, target_sets, target_reps])
+        if cursor.valid():
+            return SqlResult(True, cursor.insert_id())
+        return SqlResult(False, cursor.error_message())
+    
+    def insert_user_exercise_template(self, user_id: int, template_id: int) -> SqlResult:
+        sql = """
+        INSERT INTO user_exercise_template (user_id, exercise_template_id) VALUES (?, ?);
         """
-        self.execute_sql_params(sql, [user_id, template_id])
+        cursor = self.execute_sql_params(sql, [user_id, template_id])
+        if cursor.valid():
+            return SqlResult(True, cursor.insert_id())
+        return SqlResult(False, cursor.error_message())
 
-    def get_user_by_username(self, username: str) -> SqlQueryResult:
+    def insert_workout_exercise_template(self, workout_template_id: int, exercise_template_id: int, order_index: int) -> SqlResult:
+        sql = """
+        INSERT INTO workout_exercise_template (workout_template_id, exercise_template_id, order_index) VALUES (?, ?, ?)
+        """
+        cursor = self.execute_sql_params(sql, [workout_template_id, exercise_template_id, order_index])
+        if cursor.valid():
+            return SqlResult(True, cursor.insert_id())
+        return SqlResult(False, cursor.error_message())
+
+    def get_user_by_username(self, username: str) -> SqlResult:
         sql = 'SELECT id, username, password_hash FROM "user" WHERE username = ?'
         cursor = self.execute_sql_params(sql, [username])
         if cursor.valid():
-            return SqlQueryResult(True, cursor.one())
-        return SqlQueryResult(False, cursor.error_message())
+            return SqlResult(True, cursor.one())
+        return SqlResult(False, cursor.error_message())
     
     # Exercises
 
-    def get_exercise_templates(self, user_id: int) -> SqlQueryResult:
+    def get_exercise_templates(self, user_id: int) -> SqlResult:
         sql = """
         SELECT 
             e.id AS id,
+            e.creator_id AS creator_id,
             e.name AS name,
+            e.category AS category,
             e.target_sets AS sets,
             e.target_reps AS reps,
-            e.creator_id AS creator_id,
             u.username AS creator_name
         FROM exercise_template e
         JOIN "user" u ON e.creator_id = u.id
@@ -116,14 +142,15 @@ class SqlQueryHandler:
         """
         cursor = self.execute_sql_params(sql, [user_id])
         if cursor.valid():
-            return SqlQueryResult(True, cursor.all())
-        return SqlQueryResult(False, cursor.error_message())
+            return SqlResult(True, cursor.all())
+        return SqlResult(False, cursor.error_message())
 
-    def get_adopted_exercise_templates(self, user_id: int) -> SqlQueryResult:
+    def get_adopted_exercise_templates(self, user_id: int) -> SqlResult:
         sql = """
         SELECT 
             e.id AS id,
             e.name AS name,
+            e.category AS category,
             e.target_sets AS sets,
             e.target_reps AS reps,
             e.creator_id AS creator_id,
@@ -138,14 +165,15 @@ class SqlQueryHandler:
         """
         cursor = self.execute_sql_params(sql, [user_id])
         if cursor.valid():
-            return SqlQueryResult(True, cursor.all())
-        return SqlQueryResult(False, cursor.error_message()) 
+            return SqlResult(True, cursor.all())
+        return SqlResult(False, cursor.error_message()) 
 
-    def get_exercise_logs(self, user_id: int) -> SqlQueryResult:
+    def get_exercise_logs(self, user_id: int) -> SqlResult:
         sql = """
         SELECT DISTINCT
             COALESCE(e.exercise_template_id, e.id) AS id,
             e.name AS name,
+            et.category AS category,
             w.user_id AS creator_id,
             u.username AS creator_name,
             e.notes AS notes
@@ -154,19 +182,22 @@ class SqlQueryHandler:
             ON e.workout_id = w.id
         JOIN "user" u 
             ON w.user_id = u.id
+        LEFT JOIN exercise_template et 
+            ON e.exercise_template_id = et.id
         WHERE w.user_id = ?
         ORDER BY e.name ASC;
         """
         cursor = self.execute_sql_params(sql, [user_id])
         if cursor.valid():
-            return SqlQueryResult(True, cursor.all())
-        return SqlQueryResult(False, cursor.error_message())
+            return SqlResult(True, cursor.all())
+        return SqlResult(False, cursor.error_message())
 
-    def get_exercise_templates_by_name(self, name: str, user_id: int) -> SqlQueryResult:
+    def get_exercise_templates_by_name(self, name: str, user_id: int) -> SqlResult:
         sql = """
         SELECT 
             e.id AS id,
             e.name AS name,
+            e.category AS category,
             e.target_sets AS sets,
             e.target_reps AS reps,
             e.creator_id AS creator_id,
@@ -183,35 +214,33 @@ class SqlQueryHandler:
         """ 
         cursor = self.execute_sql_params(sql, [user_id, user_id, f"%{name.strip()}%"])
         if cursor.valid():
-            return SqlQueryResult(True, cursor.all())
-        return SqlQueryResult(False, cursor.error_message()) 
+            return SqlResult(True, cursor.all())
+        return SqlResult(False, cursor.error_message()) 
 
     # Workouts
     
-    def get_workout_logs(self, user_id: int) -> SqlQueryResult:
-        # TODO: We want notes! Add it into SELECT when we have updated 
-        # the schema and added a default value for it which we forgot to do
+    def get_workout_logs(self, user_id: int) -> SqlResult:
         sql = """
         SELECT 
             w.id AS id,
-            w.date AS timestamp,
-            w.description AS description,
+            w.name AS name,
+            w.notes AS notes,
+            w.started_at AS started_at,
+            w.ended_at AS ended_at,
             w.user_id AS creator_id,
             u.username AS creator_name
-            -- COUNT(DISTINCT e.id) AS exercise_count,
-            -- COALESCE(SUM(e.sets), 0) AS total_sets
         FROM workout_log w
         JOIN "user" u 
             ON w.user_id = u.id
         LEFT JOIN exercise_log e 
             ON e.workout_id = w.id
         WHERE w.user_id = ?
-        GROUP BY w.id, w.date, w.description, w.user_id, u.username
-        ORDER BY w.date DESC;
+        GROUP BY w.id, w.name, w.notes, w.started_at, w.ended_at, w.user_id, u.username
+        ORDER BY w.started_at DESC;
         """
         cursor = self.execute_sql_params(sql, [user_id])
         if cursor.valid():
-            return SqlQueryResult(True, cursor.all())
-        return SqlQueryResult(False, cursor.error_message())
+            return SqlResult(True, cursor.all())
+        return SqlResult(False, cursor.error_message()) 
 
 sql_handler = SqlQueryHandler("database/xfit_dev.db")
