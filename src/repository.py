@@ -93,8 +93,6 @@ class SqlHandler:
         if not self.db_path.exists():
             # Do something in non-debug build. Create the filepath or kill the app...
             pass
-
-    # These are for isolated queries/writes that do not need transaction handling
     
     def execute_sql(self, sql: str, params: list = []) -> SqlCursor:
         try:
@@ -144,7 +142,7 @@ class SqlHandler:
     
     def insert_user_exercise_template(self, user_id: int, template_id: int) -> SqlResult:
         sql = """
-        INSERT INTO user_exercise_template (user_id, exercise_template_id) VALUES (?, ?);
+        INSERT INTO user_exercise_template (user_id, exercise_template_id) VALUES (?, ?)
         """
         cursor = self.execute_sql(sql, [user_id, template_id])
         if cursor.valid():

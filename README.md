@@ -68,7 +68,7 @@ Sovelluksen käyttö edellyttää olemassa olevaa tietokantaa. Luo tietokanta su
 sqlite3 database/xfit_dev.db < src/db/schema.sql
 ```
 
-> **Huom.** Sovellus ei luo tyhjää tietokantaa eikä käynnisty, jos se ei läydä tiedostossa `config.py` määritettyä polkua tietokantaan. 
+> **Huom.** Sovellus ei luo tyhjää tietokantaa eikä käynnisty, jos se ei löydä tiedostossa `config.py` määritettyä polkua tietokantaan. 
 
 Mikäli haluat käyttää sovellusta valmiiksi syötetyllä testidatalla, voit lisätä tiedot tietokantaan suorittamalla
 
