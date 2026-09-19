@@ -1,54 +1,58 @@
 import sqlite3
 from flask import Flask
 from pathlib import Path
-from .utils import set_log_filters, RemoveStaticLogs, RemoveChromeDevtoolLogs, debug_output, debug_assert
+from .config import DEBUG_MODE, DATABASE_FILEPATH, APP_SECRET_KEY
+from .utils import set_log_filters, RemoveStaticLogs, RemoveChromeDevtoolLogs, debug_assert
 from .repository import close_sql_connection
 
-#def create_app():
-#    app = Flask(__name__)
-#    with app.app_context():
-#        init_db()
-#    return app
 app = Flask(__name__)
-# TODO: Read from env file
-app.secret_key = "rDIP7NzAOQZZa61rfGpV1LnT9H5PzZor3FZth3Om6XA="
 app.teardown_appcontext(close_sql_connection)
+app.secret_key = APP_SECRET_KEY
 
-set_log_filters("werkzeug", [
-    RemoveStaticLogs(),
-    RemoveChromeDevtoolLogs()
-])
+if DEBUG_MODE:
+    set_log_filters("werkzeug", [
+        RemoveStaticLogs(),
+        RemoveChromeDevtoolLogs()
+    ])
 
-DB_FILENAME_DEV = "xfit_dev.db"
-DB_FILEPATH_DEV = f"database/{DB_FILENAME_DEV}"
-DB_PATH_DEV = Path(DB_FILEPATH_DEV)
-debug_assert(DB_PATH_DEV.exists(), f"Create: {DB_FILEPATH_DEV}")
+DB_PATH = Path(DATABASE_FILEPATH)
+DB_DNE_MESSAGE = f"Database file does not exist. Create: <project-root>/{DB_PATH}"
+debug_assert(DB_PATH.exists(), DB_DNE_MESSAGE)
 
-def debug_execute_sql(sql: str):
-    with sqlite3.connect(DB_PATH_DEV) as connection:
+def cli_execute_sql(sql: str):
+    with sqlite3.connect(DB_PATH) as connection:
         connection.execute(sql)
         connection.commit()
 
-def debug_execute_sql_file(filepath: str, db_path = DB_PATH_DEV):
+def cli_execute_sql_file(filepath: str, db_path = DB_PATH):
     with sqlite3.connect(db_path) as connection:
         with open(Path(filepath), mode="r", encoding="utf-8") as file:
             connection.executescript(file.read())
 
-def debug_run_file(filepath: str):
-    debug_execute_sql_file(filepath)
-    debug_output(f"Run file {filepath} complete")
+def cli_run_file(filepath: str):
+    cli_execute_sql_file(filepath)
+    print(f"File {filepath} execution complete")
 
-@app.cli.command("db-run-schema")
-def db_delete_all_data_cli():
-    debug_output("--- db-run-schema ---")
-    debug_run_file("src/db/schema.sql")
+@app.cli.command("db-init-schema")
+def db_init_schema_cli():
+    print("--- db-init-schema ---")
+    if DB_PATH.exists():
+        cli_run_file("src/db/schema.sql")
+    else:
+        print(DB_DNE_MESSAGE)
 
 @app.cli.command("db-seed-users")
 def db_seed_users_cli():
-    debug_output("--- db-seed-users ---")
-    debug_run_file("src/db/seed_users.sql")
+    print("--- db-seed-users ---")
+    if DB_PATH.exists():
+        cli_run_file("src/db/seed_users.sql")
+    else:
+        print(DB_DNE_MESSAGE)
 
 @app.cli.command("db-seed-workouts")
 def db_seed_workouts_cli():
-    debug_output("--- db-seed-workouts ---")
-    debug_run_file("src/db/seed_workouts.sql")
+    print("--- db-seed-workouts ---")
+    if DB_PATH.exists():
+        cli_run_file("src/db/seed_workouts.sql")
+    else:
+        print(DB_DNE_MESSAGE)

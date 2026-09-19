@@ -11,11 +11,14 @@
 </div>
 <div class="page-container">
 	<h2>Luo harjoituspohja</h2>
-	<form action="{{ url_for('exercises_create') }}" method="POST" class="form-stacked">
+	<form action="{{ url_for('exercise_templates') }}" method="POST" class="form-stacked">
         <label for="name">Harjoituksen nimi:</label>
         <input type="text" id="name" name="name" required>
-
-        <label for="target_sets">Sarjatavoite:</label>
+		
+		<label for="category">Liikeryhmä:</label>
+        <input type="text" id="category" name="category">
+        
+		<label for="target_sets">Sarjatavoite:</label>
         <input type="number" id="target_sets" name="target_sets" min="1" value="3" required>
 
         <label for="target_reps">Toistotavoite:</label>
@@ -41,7 +44,11 @@
 			<div class="item-extra">
 				<span>[Käytössä?]</span>
 				<span>[Käyttäjien määrä]</span>
-				<span>[Tarkastele-painike]</span>
+				<span>
+					<a href="{{ url_for('exercise_template', template_id = e.id) }}">
+						<button class="btn" type="submit">Tarkastele</button>
+					</a>	
+				</span>
 			</div>
 		</div>
 	{% endfor %}
@@ -64,7 +71,11 @@
 			<div class="item-extra">
 				<span>[Käytössä?]</span>
 				<span>[Käyttäjien määrä]</span>
-				<span>[Tarkastele-painike]</span>
+				<span>
+					<a href="{{ url_for('exercise_template', template_id = e.id) }}">
+						<button class="btn" type="submit">Tarkastele</button>
+					</a>	
+				</span>
 			</div>
 		</div>
 	{% endfor %}

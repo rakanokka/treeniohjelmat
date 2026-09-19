@@ -1,7 +1,7 @@
-import sys
 import logging
 from typing import Any, NamedTuple
 from pathlib import Path
+from .config import DEBUG_MODE
 
 class RemoveStaticLogs(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
@@ -15,6 +15,22 @@ def set_log_filters(logger_name: str, log_filters: list[logging.Filter]):
     logger = logging.getLogger(logger_name)
     for log_filter in log_filters:
         logger.addFilter(log_filter)
+
+class IntValidator:
+    def __init__(self, input_value: Any):
+        self.input_value = input_value 
+        self.validated = 0
+
+    def validate(self) -> bool:
+        result = True;
+        try: 
+            self.validated = int(self.input_value)
+        except Exception:
+            result = False
+        return result
+
+    def get(self) -> int:
+        return self.validated
 
 class GetPathResult(NamedTuple):
     success: bool
@@ -49,9 +65,9 @@ def get_path(path_str: str) -> GetPathResult:
     return GetPathResult(True, "", target_path)
 
 def debug_output(message: Any):
-    print(f"[DEBUG] {message}")
+    if DEBUG_MODE:
+        print(f"[DEBUG] {message}")
 
-def debug_assert(expect_true: bool, error_message = "Invalid assertion"):
-    # TODO: Maybe use the built in assert?
-    if not expect_true:
-        sys.exit(error_message)
+def debug_assert(expected: bool, message = "Invalid assertion"):
+    if DEBUG_MODE:
+        assert expected, message

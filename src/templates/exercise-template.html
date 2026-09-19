@@ -1,0 +1,58 @@
+{% extends "layout.html" %}
+
+{% block title %}Harjoitukset &ndash; XFit{% endblock %}
+
+{% block content %}
+<div class="page-nav exercises-nav">
+	<ul class="no-bullets">
+		<li><a href="{{ url_for('exercises') }}">Harjoitukset</a></li>
+		<li><a href="{{ url_for('exercise_templates') }}">Harjoituspohjat</a></li>
+		<li><a href="{{ url_for('exercises_search') }}">Etsi harjoituspohjia</a></li>
+    </ul>
+</div>
+<div class="page-container">
+	{% if not error %}
+	{% if has_edit_permission %}
+	<h2>Muokkaa harjoituspohjaa</h2>
+	<form action="{{ url_for('exercise_template', template_id = template.id) }}" method="POST" class="form-stacked">
+        <label for="name">Harjoituksen nimi:</label>
+		<input type="text" id="name" name="name" value="{{ template.name }}" required>
+		
+		<label for="category">Liikeryhmä:</label>
+        <input type="text" id="category" name="category" value="{{ template.category or "" }}">
+        
+		<label for="target_sets">Sarjatavoite:</label>
+		<input type="number" id="target_sets" name="target_sets" min="1" value="{{ template.sets }}" required>
+
+        <label for="target_reps">Toistotavoite:</label>
+		<input type="number" id="target_reps" name="target_reps" min="1" value="{{ template.reps }}" required>
+
+        <button type="submit" class="btn">Päivitä</button>	
+    </form>
+	{% if notification %}
+	<br>
+	<div>
+		<p>{{ notification }}</p>
+	</div>
+	{% endif %}
+	<br>
+	{% endif %}
+	<h2>Poista harjoituspohja</h2>
+	<ul>
+		<li>Harjoitus: {{ template.name }}</li>
+		{% if template.category %}
+		<li>Liikeryhmä: {{ template.category }}</li>
+		{% endif %}
+		<li>Sarjatavoite: {{ template.sets }}</li>
+		<li>Toistotavoite: {{ template.reps }}</li>
+		<li>Luoja: {{ template.creator_name }}</li>
+	<ul>
+	<form action="{{ url_for('exercise_template', template_id = template.id) }}" method="POST" class="form-stacked">
+		<input type="hidden" name="is_delete" value="true">
+        <button type="submit" class="btn">Poista</button>	
+    </form>
+	{% else %}
+	{{ error }}
+	{% endif %}
+</div>
+{% endblock %}
