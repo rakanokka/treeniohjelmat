@@ -47,6 +47,8 @@ Varmista ennen aloittamista, että koneellesi on asennetuina seuraavat työkalut
 * **Python 3.10+** (mukaan lukien `pip` ja `venv`)
 * **SQLite3**
 
+> **Huom.** Projektin Python-koodissa käytetään runsaasti tyyppivihjeitä, jotka otettiin käyttöön versiossa 3.5. Versio 3.5 ei välttämättä tunnista kaikkia tyyppivihjeitä. Siten suositeltavaa on käyttää Python 3.10+. 
+
 Kloonaa projekti paikallisesti koneellesi ja siirry projektin juurihakemistoon:
 
 ```bash
