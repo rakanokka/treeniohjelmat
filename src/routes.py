@@ -39,6 +39,7 @@ def login() -> str | Any:
         username = request.form["username"]
         password = request.form["password"]
         r = sql_handler.get_user_by_username(username) 
+        print(r)
         if r.success and check_password_hash(r.data["password_hash"], password): 
             session["user_id"] = r.data["id"]
             session["username"] = r.data["username"]
@@ -90,7 +91,7 @@ def exercise_templates() -> str | Any:
     
     if request.method == "POST":
         name = request.form.get("name", "").strip() 
-        name = request.form.get("category", "").strip() 
+        category = request.form.get("category", "").strip() 
         target_sets_validator = IntValidator(request.form["target_sets"])
         target_reps_validator = IntValidator(request.form["target_reps"])
         if not(target_sets_validator.validate() and target_reps_validator.validate()):

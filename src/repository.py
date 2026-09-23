@@ -164,7 +164,10 @@ class SqlHandler:
         sql = 'SELECT id, username, password_hash FROM "user" WHERE username = ?'
         cursor = self.execute_sql(sql, [username.strip()])
         if cursor.valid():
-            return SqlResult(True, cursor.next_row())
+            data = cursor.next_row()
+            if data:
+                return SqlResult(True, data)
+            return SqlResult(False, "User not found")
         return SqlResult(False, cursor.error_message())
     
     # Exercises
