@@ -10,7 +10,6 @@
     </ul>
 </div>
 <div class="page-container">
-	{% if not error %}
 	<h2>Treenit</h2>
 	<div class="list-container">
 	{% for w in workouts %}	
@@ -23,9 +22,6 @@
 			</div>
 		</div>
 	{% endfor %}
-	</div>
-	{% else %}
-	{{ error }}
-	{% endif %}
+	</div>	
 </div>
 {% endblock %}

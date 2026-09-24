@@ -32,8 +32,16 @@
 
     <main>
 		{% block content %}{% endblock %}
-    </main>
-
+		{% with messages = get_flashed_messages() %}
+			{% if messages %}
+			<ul class=flashes>
+			{% for message in messages %}
+				<li>{{ message }}</li>
+			{% endfor %}
+			</ul>
+			{% endif %}
+		{% endwith %}
+	</main>	
     <footer>
         <p>&copy; 2026 XFit</p>
     </footer>

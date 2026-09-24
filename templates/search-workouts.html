@@ -17,7 +17,6 @@
 			<button class="btn" type="submit">Hae</button>
 		</form>
 	</div>
-	{% if not error %}
 	<div class="list-container">
 	{% for w in templates %}	
 		<div class="list-item workout-item">
@@ -43,8 +42,5 @@
 		</div>
 	{% endfor %}
 	</div>
-	{% else %}
-	{{ error }}
-	{% endif %}
 </div>
 {% endblock %}

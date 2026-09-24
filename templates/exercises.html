@@ -10,7 +10,6 @@
     </ul>
 </div>
 <div class="page-container">
-	{% if not error %}
 	<h2>Harjoitukset</h2>
 	<div class="list-container">
 	{% for e in exercises %}	
@@ -24,8 +23,5 @@
 		</div>
 	{% endfor %}
 	</div>
-	{% else %}
-	{{ error }}
-	{% endif %}
 </div>
 {% endblock %}
