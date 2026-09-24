@@ -67,7 +67,7 @@ pip install flask
 Sovelluksen käyttö edellyttää olemassa olevaa tietokantaa. Luo tietokanta suorittamalla
 
 ```bash 
-sqlite3 database/xfit_dev.db < src/db/schema.sql
+sqlite3 xfit_dev.db < schema.sql
 ```
 
 > **Huom.** Sovellus ei luo tyhjää tietokantaa eikä käynnisty, jos se ei löydä tiedostossa `config.py` määritettyä polkua tietokantaan. 
@@ -75,15 +75,8 @@ sqlite3 database/xfit_dev.db < src/db/schema.sql
 Mikäli haluat käyttää sovellusta valmiiksi syötetyllä testidatalla, voit lisätä tiedot tietokantaan suorittamalla
 
 ```bash 
-sqlite3 database/xfit_dev.db < src/db/seed_users.sql
-sqlite3 database/xfit_dev.db < src/db/seed_workouts.sql
-```
-
-tai vaihtoehtoisesti `Flask`-komentorivin kautta
-
-```bash 
-flask --app run db-seed-users
-flask --app run db-seed-workouts
+sqlite3 xfit_dev.db < seed_users.sql
+sqlite3 xfit_dev.db < seed_workouts.sql
 ```
 
 > **Huom.** Skriptit on ajettava tässä järjestyksessä tyhjään tietokantaan. Jälkimmäinen skripti edellyttää, että tietokannassa on vähintään kolme käyttäjää avaimilla 1, 2 ja 3. Testidata sisältää käyttäjät `pekka`, `matti` ja `teppo`, joiden kaikkien salasanaksi on määritetty merkkijono `hello`.
@@ -91,7 +84,7 @@ flask --app run db-seed-workouts
 Kun riippuvuudet on asennettu, sovelluksen voi käynnistää ajamalla
 
 ```
-python3 run.py
+flask run
 ```
 
 Sovellus käynnistyy osoitteessa http://localhost:5000.
