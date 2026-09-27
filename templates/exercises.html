@@ -18,7 +18,11 @@
 			<p>{{ e.category }}</p>
 			<p class="italic-text">{{ e.notes }}</p>
 			<div class="item-extra">
-				<span>[Tarkastele-painike]</span>
+				<span>
+					<a href="{{ url_for('view_exercise', exercise_id = e.id) }}">
+						<button class="btn" type="submit">Tarkastele</button>
+					</a>	
+				</span>
 			</div>
 		</div>
 	{% endfor %}

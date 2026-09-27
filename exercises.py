@@ -1,5 +1,5 @@
 from typing import Any
-from database import query, execute, insert_id, get_connection
+from database import query, execute, insert_id, get_connection, row_count
 
 def add_my_exercise_template(user_id: int, name: str, category: str, target_sets: int, target_reps: int) -> int:
     category_or_null = (category.strip() or None) if category else None 
@@ -23,6 +23,18 @@ def get_exercise_template_creator_id(template_id: int) -> int:
     r = query(sql, [template_id])
     return r[0]["creator_id"] if r else -1
 
+def get_exercise_user_id(exercise_id: int) -> int:
+    sql = """
+    SELECT 
+        w.user_id AS user_id
+    FROM exercise_log e
+    JOIN workout_log w 
+        ON w.id = e.workout_id 
+    WHERE e.id = ?
+    """
+    r = query(sql, [exercise_id])
+    return r[0]["user_id"] if r else -1
+
 def get_exercise_template(template_id: int) -> Any:
     sql = """
     SELECT 
@@ -44,19 +56,58 @@ def get_exercise_template(template_id: int) -> Any:
 def get_exercise_templates(user_id: int) -> list:
     sql = """
     SELECT 
-        e.id AS id,
-        e.creator_id AS creator_id,
-        e.name AS name,
-        e.category AS category,
-        e.target_sets AS sets,
-        e.target_reps AS reps,
-        u.username AS creator_name
-    FROM exercise_template e
-    JOIN "user" u ON e.creator_id = u.id
-    WHERE e.creator_id = ?
-    ORDER BY e.name ASC
+        et.id AS id,
+        et.creator_id AS creator_id,
+        et.name AS name,
+        et.category AS category,
+        et.target_sets AS sets,
+        et.target_reps AS reps,
+        u.username AS creator_name,
+        COUNT(DISTINCT e.id) AS exercise_count,
+        COUNT(DISTINCT uet.user_id) AS user_count
+    FROM exercise_template et
+    JOIN "user" u 
+        ON et.creator_id = u.id
+    LEFT JOIN user_exercise_template uet 
+        ON et.id = uet.exercise_template_id
+    LEFT JOIN exercise_log e 
+        ON et.id = e.exercise_template_id
+    LEFT JOIN workout_log w 
+        ON e.workout_id = w.id AND w.user_id = ?
+    WHERE et.creator_id = ?
+    GROUP BY et.id
+    ORDER BY et.name ASC
     """
-    return query(sql, [user_id])
+    return query(sql, [user_id, user_id])
+
+def get_adopted_exercise_templates(user_id: int) -> list:
+    sql = """
+    SELECT 
+        et.id AS id,
+        et.creator_id AS creator_id,
+        et.name AS name,
+        et.category AS category,
+        et.target_sets AS sets,
+        et.target_reps AS reps,
+        u.username AS creator_name,
+        COUNT(DISTINCT e.id) AS exercise_count,
+        COUNT(DISTINCT uet_all.user_id) AS user_count
+    FROM user_exercise_template uet_my
+    JOIN exercise_template et 
+        ON uet_my.exercise_template_id = et.id
+    JOIN "user" u  
+        ON et.creator_id = u.id
+    LEFT JOIN user_exercise_template uet_all
+        ON et.id = uet_all.exercise_template_id
+    LEFT JOIN exercise_log e 
+        ON et.id = e.exercise_template_id
+    LEFT JOIN workout_log w 
+        ON e.workout_id = w.id AND w.user_id = ?
+    WHERE uet_my.user_id = ?
+    GROUP BY et.id 
+    ORDER BY et.name ASC
+    """
+    return query(sql, [user_id, user_id])
 
 def find_exercise_templates(name: str, user_id: int) -> list:
     sql = """
@@ -80,30 +131,38 @@ def find_exercise_templates(name: str, user_id: int) -> list:
     """ 
     return query(sql, [user_id, user_id, f"%{name.strip()}%"])
 
-def get_adopted_exercise_templates(user_id: int) -> list:
+def get_exercise_log(exercise_id: int) -> Any:
     sql = """
     SELECT 
         e.id AS id,
+        e.workout_id AS workout_id,
         e.name AS name,
-        e.category AS category,
-        e.target_sets AS sets,
-        e.target_reps AS reps,
-        e.creator_id AS creator_id,
-        u.username AS creator_name
-    FROM user_exercise_template uet
-    JOIN exercise_template e 
-        ON uet.exercise_template_id = e.id
-    JOIN "user" u 
-        ON e.creator_id = u.id
-    WHERE uet.user_id = ?
-    ORDER BY e.name ASC
+        e.notes AS notes,
+        w.started_at AS date,
+        COUNT(es.id) AS sets,
+        SUM(es.reps) AS reps,
+        et.target_sets AS target_sets,
+        et.target_reps AS target_reps,
+        (COUNT(es.id) - et.target_sets) AS sets_diff,
+        (SUM(es.reps) - (et.target_sets * et.target_reps)) AS reps_diff
+    FROM exercise_log e
+    JOIN workout_log w 
+        ON e.workout_id = w.id
+    JOIN exercise_set es 
+        ON es.exercise_id = e.id
+    LEFT JOIN exercise_template et 
+        ON e.exercise_template_id = et.id
+    WHERE e.id = ?
+    GROUP BY e.id; 
     """
-    return query(sql, [user_id])
+    r = query(sql, [exercise_id])
+    return r[0] if r else None
 
 def get_exercise_logs(user_id: int) -> list:
     sql = """
-    SELECT DISTINCT
-        COALESCE(e.exercise_template_id, e.id) AS id,
+    SELECT
+        e.id AS id,
+        e.exercise_template_id AS template_id,
         e.name AS name,
         et.category AS category,
         w.user_id AS creator_id,
@@ -152,3 +211,16 @@ def delete_exercise_template(user_id: int, template_id: int):
         else:
             sql = "DELETE FROM user_exercise_template WHERE user_id = ? AND exercise_template_id = ?"
             execute(sql, [user_id, template_id])
+            #print("Deleted count", row_count())
+
+def delete_exercise_log(user_id: int, exercise_id: int):
+    sql = """
+    DELETE FROM exercise_log
+    WHERE id = ? 
+    AND workout_id IN (
+        SELECT id 
+        FROM workout_log 
+        WHERE user_id = ?
+    )
+    """
+    execute(sql, [exercise_id, user_id])

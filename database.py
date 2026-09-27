@@ -19,7 +19,11 @@ def execute(sql: str, params = []):
     c = connection.execute(sql, params)
     connection.commit()
     g.insert_id = c.lastrowid
+    g.row_count = c.rowcount
     connection.close()
 
 def insert_id() -> int:
     return int(g.insert_id) if g.insert_id else -1
+
+def row_count() -> int:
+    return g.row_count

@@ -29,23 +29,23 @@
 	<br>
 	<h2>Luodut pohjat</h2>
 	<div class="list-container">
-	{% for e in my_templates %}	
+	{% for et in my_templates %}	
 		<div class="list-item exercise-item">
-			<p class="bold-text">{{ e.name }}</p>
-			<p>{{ e.category }}</p>
+			<p class="bold-text">{{ et.name }}</p>
+			<p>{{ et.category }}</p>
 			<div class="item-info-entry">
 				<p class="key">Sarjat:</p>	
-				<p class="value">{{ e.sets }}</p>	
+				<p class="value">{{ et.sets }}</p>	
 			</div>
 			<div class="item-info-entry">
 				<p class="key">Toistot:</p>	
-				<p class="value">{{ e.reps }}</p>	
+				<p class="value">{{ et.reps }}</p>	
 			</div>
 			<div class="item-extra">
-				<span>[Käytössä?]</span>
-				<span>[Käyttäjien määrä]</span>
+				<span>{{ et.exercise_count }} harjoitusta</span>
+				<span>{{ et.user_count }} käyttäjää</span>
 				<span>
-					<a href="{{ url_for('exercise_template', template_id = e.id) }}">
+					<a href="{{ url_for('view_exercise_template', template_id = et.id) }}">
 						<button class="btn" type="submit">Tarkastele</button>
 					</a>	
 				</span>
@@ -56,23 +56,23 @@
 	<br>
 	<h2>Käytössä olevat pohjat</h2>
 	<div class="list-container">
-	{% for e in adopted_templates %}	
+	{% for et in adopted_templates %}	
 		<div class="list-item exercise-item">
-			<p class="bold-text">{{ e.name }}</p>
-			<p>{{ e.category }}</p>
+			<p class="bold-text">{{ et.name }}</p>
+			<p>{{ et.category }}</p>
 			<div class="item-info-entry">
 				<p class="key">Sarjat:</p>	
-				<p class="value">{{ e.sets }}</p>	
+				<p class="value">{{ et.sets }}</p>	
 			</div>
 			<div class="item-info-entry">
 				<p class="key">Toistot:</p>	
-				<p class="value">{{ e.reps }}</p>	
+				<p class="value">{{ et.reps }}</p>	
 			</div>
 			<div class="item-extra">
-				<span>[Käytössä?]</span>
-				<span>[Käyttäjien määrä]</span>
+				<span>{{ et.exercise_count }} harjoitusta</span>
+				<span>{{ et.user_count }} käyttäjää</span>
 				<span>
-					<a href="{{ url_for('exercise_template', template_id = e.id) }}">
+					<a href="{{ url_for('view_exercise_template', template_id = et.id) }}">
 						<button class="btn" type="submit">Tarkastele</button>
 					</a>	
 				</span>

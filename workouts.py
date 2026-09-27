@@ -1,10 +1,15 @@
 from database import query, execute, insert_id
 
-def insert_workout_exercise_template(workout_template_id: int, exercise_template_id: int, order_index: int) -> int:
+def add_workout_exercise_template(workout_template_id: int, exercise_template_id: int, order_index: int) -> int:
     sql = "INSERT INTO workout_exercise_template (workout_template_id, exercise_template_id, order_index) VALUES (?, ?, ?)"
     execute(sql, [workout_template_id, exercise_template_id, order_index])
     return insert_id()
     
+def get_workout_log_user_id(workout_id: int) -> int:
+    sql = "SELECT user_id FROM workout_log WHERE id = ?"
+    r = query(sql, [workout_id])
+    return r[0]["user_id"] if r else -1
+
 def get_workout_logs(user_id: int) -> list:
     sql = """
     SELECT 

@@ -32,7 +32,11 @@
 			</div>
 			<div class="item-extra">
 				<span>[Käyttäjien määrä]</span>
-				<span>[Tarkastele-painike]</span>
+				<span>
+					<a href="{{ url_for('view_exercise_template', template_id = e.id, from_search = False) }}">
+						<button class="btn" type="submit">Tarkastele</button>
+					</a>	
+				</span>
 				<form action="{{ url_for('exercises_add_template') }}" method="POST">
 					<input type="hidden" name="template_id" value="{{ e.id }}">
 					<button class="btn" type="submit">Ota käyttöön</button>

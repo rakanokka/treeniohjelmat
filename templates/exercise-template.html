@@ -13,7 +13,7 @@
 <div class="page-container">
 	{% if has_edit_permission %}
 	<h2>Muokkaa harjoituspohjaa</h2>
-	<form action="{{ url_for('exercise_template', template_id = template.id) }}" method="POST" class="form-stacked">
+	<form action="{{ url_for('view_exercise_template', template_id = template.id) }}" method="POST" class="form-stacked">
         <label for="name">Harjoituksen nimi:</label>
 		<input type="text" id="name" name="name" value="{{ template.name }}" required>
 		
@@ -30,7 +30,7 @@
     </form>
 	<br>
 	{% endif %}
-	<h2>Poista harjoituspohja</h2>
+	<h2>Harjoituspohja tiedot</h2>
 	<ul>
 		<li>Harjoitus: {{ template.name }}</li>
 		{% if template.category %}
@@ -40,7 +40,7 @@
 		<li>Toistotavoite: {{ template.reps }}</li>
 		<li>Luoja: {{ template.creator_name }}</li>
 	<ul>
-	<form action="{{ url_for('exercise_template', template_id = template.id) }}" method="POST" class="form-stacked">
+	<form action="{{ url_for('view_exercise_template', template_id = template.id) }}" method="POST" class="form-stacked">
 		<input type="hidden" name="is_delete" value="true">
         <button type="submit" class="btn">Poista</button>	
     </form>
