@@ -2,8 +2,11 @@ BEGIN TRANSACTION;
 
 DELETE FROM exercise_set;
 DELETE FROM exercise_log;
+DELETE FROM workout_exercise_template;
+DELETE FROM user_exercise_template;
 DELETE FROM exercise_template;
 DELETE FROM workout_log;
+DELETE FROM user_workout_template;
 DELETE FROM workout_template;
 DELETE FROM workout_plan;
 
@@ -14,10 +17,9 @@ INSERT INTO workout_template (id, creator_id, workout_plan_id, name) VALUES
 (1, 1, NULL, 'Rintatreeni A'),
 (2, 2, NULL, 'Jalkapäivä Volyymi');
 
-INSERT INTO workout_log (id, user_id, workout_template_id, name, notes, started_at, ended_at) VALUES 
-(1, 1, 1, 'Rintatreeni A', 'Viimeinen sarja tiukka', '2026-09-10 10:00:00', '2026-09-10 11:15:00'),
-(2, 1, 2, 'Jalkapäivä Volyymi', 'Testattiin Pekan jalkatreeniä, hapotti!', '2026-09-12 14:30:00', '2026-09-12 16:00:00'),
-(3, 2, 2, 'Jalkapäivä Volyymi', 'Perustreeni kulki hyvin', '2026-09-11 18:00:00', '2026-09-11 19:10:00');
+INSERT INTO user_workout_template (user_id, workout_template_id) VALUES
+(1, 2),
+(2, 1);
 
 INSERT INTO exercise_template (id, creator_id, name, category, target_sets, target_reps) VALUES 
 (1, 1, 'Penkkipunnerrus', 'Rinta', 3, 10),
@@ -28,6 +30,21 @@ INSERT INTO exercise_template (id, creator_id, name, category, target_sets, targ
 (6, 2, 'Sjtm maastaveto', 'Jalat', 3, 10),
 (7, 3, 'Leuanveto', 'Selkä', 3, 8),
 (8, 3, 'Pystypunnerrus', 'Olkapäät', 3, 10);
+
+INSERT INTO workout_exercise_template (id, workout_template_id, exercise_template_id, order_index) VALUES
+-- Rintatreeni A
+(1, 1, 1, 0), -- Penkkipunnerrus
+(2, 1, 2, 1), -- Vinopenkki KP
+(3, 1, 3, 2), -- Ristikkäistalja
+-- Jalkapäivä Volyymi
+(4, 2, 4, 0), -- Kyykky
+(5, 2, 5, 1), -- Reidenojennus
+(6, 2, 6, 2); -- Sjtm maastaveto
+
+INSERT INTO workout_log (id, user_id, workout_template_id, name, notes, started_at, ended_at) VALUES 
+(1, 1, 1, 'Rintatreeni A', 'Viimeinen sarja tiukka', '2026-09-10 10:00:00', '2026-09-10 11:15:00'),
+(2, 1, 2, 'Jalkapäivä Volyymi', 'Testattiin Pekan jalkatreeniä, hapotti!', '2026-09-12 14:30:00', '2026-09-12 16:00:00'),
+(3, 2, 2, 'Jalkapäivä Volyymi', 'Perustreeni kulki hyvin', '2026-09-11 18:00:00', '2026-09-11 19:10:00');
 
 INSERT INTO exercise_log (id, workout_id, exercise_template_id, name, notes) VALUES 
 (1, 1, 1, 'Penkkipunnerrus', 'Viimeisessä sarjassa tiukka 10.'),

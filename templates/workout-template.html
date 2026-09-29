@@ -1,0 +1,38 @@
+{% extends "layout.html" %}
+
+{% block title %}Treenit &ndash; XFit{% endblock %}
+
+{% block content %}
+<div class="page-nav exercises-nav">
+	<ul class="no-bullets">
+		<li><a href="{{ url_for('workouts') }}">Treenit</a></li>
+		<li><a href="{{ url_for('workout_templates') }}">Treenipohjat</a></li>
+		<li><a href="{{ url_for('workouts_search') }}">Etsi treenipohjia</a></li>
+    </ul>
+</div>
+<div class="page-container">
+	{% if has_edit_permission %}
+	<h2>Muokkaa treenipohjaa</h2>
+	<form action="{{ url_for('view_workout_template', template_id = template.id) }}" method="POST" class="form-stacked">
+        <label for="name">Treenin nimi:</label>
+		<input type="text" id="name" name="name" value="{{ template.name }}" required>
+		<label for="name">Treenin kuvaus:</label>
+		<input type="text" id="desc" name="desc" value="{{ template.description }}">
+        <button type="submit" class="btn">Päivitä</button>	
+    </form>
+	<br>
+	{% endif %}
+	<h2>Treenipohja tiedot</h2>
+	<ul>
+		<li>Treeni: {{ template.name }}</li>
+		{% if template.description %}
+		<li>kuvaus: {{ template.category }}</li>
+		{% endif %}
+		<li>Luoja: {{ template.creator_name }}</li>
+	<ul>
+	<form action="{{ url_for('view_exercise_template', template_id = template.id) }}" method="POST" class="form-stacked">
+		<input type="hidden" name="is_delete" value="true">
+        <button type="submit" class="btn">Poista</button>	
+    </form>
+</div>
+{% endblock %}

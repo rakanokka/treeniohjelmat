@@ -11,32 +11,43 @@
 </div>
 <div class="page-container">
 	<h2>Luo treenipohja</h2>
-	<form action="{{ url_for('workouts_templates') }}" method="POST">
-        <label for="name">Treenin kuvaus:</label>
+	<form action="{{ url_for('workout_templates') }}" method="POST">
+        <label for="name">Treenin nimi:</label>
         <input type="text" id="name" name="name" required>
-
+		<label for="name">Treenin kuvaus:</label>
+        <input type="text" id="desc" name="desc">
         <button type="submit" class="btn">Luo</button>
     </form>
 	<br>
 	<h2>Luodut pohjat</h2>
 	<div class="list-container">
-	{% for w in my_templates %}	
+	{% for wt in my_templates %}	
 		<div class="list-item workout-item">
-			<p class="bold-text">{{ w.description }}</p>
-			{#
-			<div class="item-info-entry">
-				<p class="key">Sarjat:</p>	
-				<p class="value">{{ w.sets }}</p>	
-			</div>
-			<div class="item-info-entry">
-				<p class="key">Toistot:</p>	
-				<p class="value">{{ w.reps }}</p>	
-			</div>
-			#}
+			<p class="bold-text">{{ wt.name }}</p>
+			{% if wt.categories %}
+			<p>{{ wt.categories }}</p>
+			{% else %}
+			<p class="italic-text">Ei ryhmää</p>
+			{% endif %}
+			{% if wt.description %}
+			<p>{{ wt.description }}</p>
+			{% else %}
+			<p class="italic-text">Ei kuvausta</p>
+			{% endif %}
 			<div class="item-extra">
-				<span>[Käytössä?]</span>
-				<span>[Käyttäjien määrä]</span>
-				<span>[Tarkastele-painike]</span>
+				<span>{{ wt.workout_count }} treeniä tehty</span>
+				<span>{{ wt.exercise_count }} harjoitusta</span>
+				<span>{{ wt.user_count }} käyttäjää</span>
+				<span>
+					<a href="{{ url_for('add_workout_exercises', template_id = wt.id) }}">
+						<button class="btn" type="submit">Lisää harjoitus</button>
+					</a>	
+				</span>
+				<span>
+					<a href="{{ url_for('view_workout_template', template_id = wt.id) }}">
+						<button class="btn" type="submit">Tarkastele</button>
+					</a>	
+				</span>
 			</div>
 		</div>
 	{% endfor %}
@@ -44,23 +55,28 @@
 	<br>
 	<h2>Käytössä olevat pohjat</h2>
 	<div class="list-container">
-	{% for w in adopted_templates %}	
+	{% for wt in adopted_templates %}	
 		<div class="list-item workout-item">
-			<p class="bold-text">{{ w.description }}</p>
-			{#
-			<div class="item-info-entry">
-				<p class="key">Sarjat:</p>	
-				<p class="value">{{ w.sets }}</p>	
-			</div>
-			<div class="item-info-entry">
-				<p class="key">Toistot:</p>	
-				<p class="value">{{ w.reps }}</p>	
-			</div>
-			#}
+			<p class="bold-text">{{ wt.name }}</p>
+			{% if wt.categories %}
+			<p>{{ wt.categories }}</p>
+			{% else %}
+			<p class="italic-text">Ei ryhmää</p>
+			{% endif %}
+			{% if wt.description %}
+			<p>{{ wt.description }}</p>
+			{% else %}
+			<p class="italic-text">Ei kuvausta</p>
+			{% endif %}
 			<div class="item-extra">
-				<span>[Käytössä?]</span>
-				<span>[Käyttäjien määrä]</span>
-				<span>[Tarkastele-painike]</span>
+				<span>{{ wt.workout_count }} treeniä tehty</span>
+				<span>{{ wt.exercise_count }} harjoitusta</span>
+				<span>{{ wt.user_count }} käyttäjää</span>
+				<span>
+					<a href="{{ url_for('view_workout_template', template_id = wt.id) }}">
+						<button class="btn" type="submit">Tarkastele</button>
+					</a>	
+				</span>
 			</div>
 		</div>
 	{% endfor %}

@@ -14,8 +14,8 @@
 	<div class="list-container">
 	{% for w in workouts %}	
 		<div class="list-item workout-item">
-			<p class="item-date">{{ w.timestamp }}</p>
-			<p class="bold-text">{{ w.description }}</p>
+			<p class="item-date">{{ w.started_at }}</p>
+			<p class="bold-text">{{ w.name }}</p>
 			<p class="italic-text">{{ w.notes }}</p>
 			<div class="item-extra">
 				<span>[Tarkastele-painike]</span>

@@ -1,0 +1,38 @@
+{% extends "layout.html" %}
+
+{% block title %}Treenit &ndash; XFit{% endblock %}
+
+{% block content %}
+<div class="page-nav workouts-nav">
+	<ul class="no-bullets">
+		<li><a href="{{ url_for('workouts') }}">Treenit</a></li>
+		<li><a href="{{ url_for('workout_templates') }}">Treenipohjat</a></li>
+		<li><a href="{{ url_for('workouts_search') }}">Etsi treenipohjia</a></li>
+    </ul>
+</div>
+<div class="page-container">
+	<h2>Harjoituspohjat</h2>
+	<div class="list-container">
+	{% for et in templates %}	
+		<div class="list-item exercise-item">
+			<p class="bold-text">{{ et.name }}</p>
+			<p>{{ et.category }}</p>
+			<div class="item-info-entry">
+				<p class="key">Sarjat:</p>	
+				<p class="value">{{ et.sets }}</p>	
+			</div>
+			<div class="item-info-entry">
+				<p class="key">Toistot:</p>	
+				<p class="value">{{ et.reps }}</p>	
+			</div>
+			<div class="item-extra">
+				<form action="" method="POST">
+					<input type="hidden" name="exercise_template_id" value="{{ et.id }}">	
+					<button type="submit" class="btn">Lisää</button>
+				</form>
+			</div>
+		</div>
+	{% endfor %}
+	</div>
+</div>
+{% endblock %}

@@ -3,6 +3,7 @@ DROP TABLE IF EXISTS exercise_log;
 DROP TABLE IF EXISTS user_exercise_template;
 DROP TABLE IF EXISTS workout_exercise_template;
 DROP TABLE IF EXISTS exercise_template;
+DROP TABLE IF EXISTS user_workout_template;
 DROP TABLE IF EXISTS workout_log;
 DROP TABLE IF EXISTS workout_template;
 DROP TABLE IF EXISTS workout_plan;
@@ -36,6 +37,14 @@ CREATE TABLE workout_template (
     FOREIGN KEY (workout_plan_id) REFERENCES workout_plan(id) ON DELETE CASCADE
 );
 
+CREATE TABLE user_workout_template (
+    user_id INTEGER NOT NULL,
+    workout_template_id INTEGER NOT NULL,
+    PRIMARY KEY (user_id, workout_template_id),
+    FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE,
+    FOREIGN KEY (workout_template_id) REFERENCES workout_template(id) ON DELETE CASCADE
+);
+
 CREATE TABLE workout_log (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
@@ -59,10 +68,10 @@ CREATE TABLE exercise_template (
 );
 
 CREATE TABLE workout_exercise_template (
-    workout_template_id INTEGER NOT NULL,
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	workout_template_id INTEGER NOT NULL,
     exercise_template_id INTEGER NOT NULL,
     order_index INTEGER DEFAULT 0 CHECK(order_index >= 0),
-    PRIMARY KEY (workout_template_id, exercise_template_id),
     FOREIGN KEY (workout_template_id) REFERENCES workout_template(id) ON DELETE CASCADE,
     FOREIGN KEY (exercise_template_id) REFERENCES exercise_template(id) ON DELETE CASCADE
 );

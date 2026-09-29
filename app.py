@@ -1,3 +1,4 @@
+from re import template
 import sqlite3
 import config
 import utils
@@ -199,8 +200,55 @@ def workouts() -> str:
 @app.route("/workouts/templates", methods = ["GET", "POST"])
 def workout_templates() -> str | Any:
     user_id = get_auth_user()
-    flash("[VIRHE] Not implemented")
-    return redirect(url_for("workouts"))
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        if not name:
+            flash("[VIRHE] Treenipohjalla on oltava nimi")
+            return redirect(url_for("workout_templates"))
+        desc = request.form.get("desc", "").strip() 
+        workouts_repo.add_my_workout_template(user_id, name, desc)
+     
+    my_templates = workouts_repo.get_workout_templates(user_id)
+    adopted_templates = workouts_repo.get_adopted_workout_templates(user_id)
+    return render_template("workout-templates.html", 
+                           my_templates = my_templates,
+                           adopted_templates = adopted_templates)
+
+@app.route("/workouts/templates/<int:template_id>", methods = ["GET", "POST"])
+def view_workout_template(template_id: int) -> str | Any:
+    user_id = get_auth_user()
+    if request.method == "POST":
+        assert False, "Not implemented"
+        if request.form.get("is_delete") == "true":
+            # Delete request
+            exercises_repo.delete_exercise_template(user_id, template_id)
+            return redirect(url_for("exercise_templates"))
+        
+        # Edit request
+        name = request.form.get("name", "").strip() 
+        if not name:
+            flash("[VIRHE] Harjoituksella on oltava nimi")
+            return redirect(url_for("view_exercise_template"))
+        category = request.form.get("category", "").strip()
+        sv = IntValidator(request.form["target_sets"])
+        rv = IntValidator(request.form["target_reps"])
+        if not(sv.validate() and rv.validate()):
+            flash("[VIRHE] Sarjat ja toistot on oltava kokonaislukuja")
+            return redirect(url_for("view_exercise_template"))
+        target_sets = sv.get()
+        target_reps = rv.get()
+        if not(target_sets > 0 and target_reps > 0):
+            flash("[VIRHE] Sarjat ja toistot on oltava positiivisia kokonaislukuja")
+            return redirect(url_for("view_exercise_template"))
+        exercises_repo.update_exercise_template(user_id, template_id, name, category, target_sets, target_reps)
+    
+    #template = workouts_repo.get_workout_template(template_id)
+    #if not template:
+    #    abort(404)
+    #creator_id = exercises_repo.get_exercise_template_creator_id(template_id)
+    return render_template("workout-template.html",
+                           template = None,
+                           has_edit_permission = False)
 
 @app.route("/workouts/search", methods=["GET"])
 def workouts_search() -> str | Any:
@@ -213,6 +261,22 @@ def workouts_add_template() -> Any:
     user_id = get_auth_user()
     flash("[VIRHE] Not implemented")
     return redirect(url_for("workouts"))
+
+@app.route("/workouts/templates/add-exercises/<int:template_id>", methods = ["GET", "POST"])
+def add_workout_exercises(template_id: int) -> str | Any:
+    user_id = get_auth_user()
+    print(template_id)
+    if request.method == "POST":
+        etv = IntValidator(request.form.get("exercise_template_id", "").strip())
+        if not etv.validate():
+            abort(500) 
+        #workouts_repo.add_exercise_to_workout(user_id, tv.get(), ev.get())
+        return redirect(url_for("workout-templates"))
+    templates = exercises_repo.get_exercise_templates(user_id)
+    adopted_templates = exercises_repo.get_adopted_exercise_templates(user_id)
+    templates.append(adopted_templates)
+    return render_template("workout-add-exercises.html",
+                           templates = templates)
 
 ### CLI ###
 
