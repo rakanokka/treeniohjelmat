@@ -1,11 +1,10 @@
-from re import template
 import sqlite3
 import config
 import utils
 import users as users_repo
 import exercises as exercises_repo
 import workouts as workouts_repo
-from typing import Any
+from typing import Any, cast
 from flask import Flask, abort, flash, render_template, request, redirect, url_for, session
 from utils import IntValidator
 from pathlib import Path
@@ -218,37 +217,31 @@ def workout_templates() -> str | Any:
 def view_workout_template(template_id: int) -> str | Any:
     user_id = get_auth_user()
     if request.method == "POST":
-        assert False, "Not implemented"
-        if request.form.get("is_delete") == "true":
-            # Delete request
-            exercises_repo.delete_exercise_template(user_id, template_id)
-            return redirect(url_for("exercise_templates"))
-        
-        # Edit request
-        name = request.form.get("name", "").strip() 
-        if not name:
-            flash("[VIRHE] Harjoituksella on oltava nimi")
-            return redirect(url_for("view_exercise_template"))
-        category = request.form.get("category", "").strip()
-        sv = IntValidator(request.form["target_sets"])
-        rv = IntValidator(request.form["target_reps"])
-        if not(sv.validate() and rv.validate()):
-            flash("[VIRHE] Sarjat ja toistot on oltava kokonaislukuja")
-            return redirect(url_for("view_exercise_template"))
-        target_sets = sv.get()
-        target_reps = rv.get()
-        if not(target_sets > 0 and target_reps > 0):
-            flash("[VIRHE] Sarjat ja toistot on oltava positiivisia kokonaislukuja")
-            return redirect(url_for("view_exercise_template"))
-        exercises_repo.update_exercise_template(user_id, template_id, name, category, target_sets, target_reps)
+        if request.form.get("is_delete_template") == "true":
+            workouts_repo.delete_workout_template(user_id, template_id)
+            return redirect(url_for("workout_templates"))
+        if request.form.get("is_remove_exercise") == "true":
+            exercise_id = cast(int, request.form.get("exercise_template_id"))
+            print(template_id, exercise_id)
+            workouts_repo.remove_exercise_from_workout(user_id, template_id, exercise_id)
+        else:
+            # Edit request
+            name = request.form.get("name", "").strip() 
+            if not name:
+                flash("[VIRHE] Treenillä on oltava nimi")
+                return redirect(url_for("view_workout_template"))
+            desc = request.form.get("desc", "").strip()
+            workouts_repo.update_workout_template(user_id, template_id, name, desc)
     
-    #template = workouts_repo.get_workout_template(template_id)
-    #if not template:
-    #    abort(404)
-    #creator_id = exercises_repo.get_exercise_template_creator_id(template_id)
+    template = workouts_repo.get_workout_template(template_id)
+    if not template:
+        abort(404)
+    exercises = workouts_repo.get_workout_template_exercises(user_id, template_id)
+    creator_id = workouts_repo.get_workout_template_creator_id(template_id)
     return render_template("workout-template.html",
-                           template = None,
-                           has_edit_permission = False)
+                           template = template,
+                           exercises = exercises,
+                           has_permissions = user_id == creator_id)
 
 @app.route("/workouts/search", methods=["GET"])
 def workouts_search() -> str | Any:
@@ -265,16 +258,17 @@ def workouts_add_template() -> Any:
 @app.route("/workouts/templates/add-exercises/<int:template_id>", methods = ["GET", "POST"])
 def add_workout_exercises(template_id: int) -> str | Any:
     user_id = get_auth_user()
-    print(template_id)
+    creator_id = workouts_repo.get_workout_template_creator_id(template_id)
+    if user_id != creator_id:
+        abort(403)
     if request.method == "POST":
-        etv = IntValidator(request.form.get("exercise_template_id", "").strip())
-        if not etv.validate():
-            abort(500) 
-        #workouts_repo.add_exercise_to_workout(user_id, tv.get(), ev.get())
-        return redirect(url_for("workout-templates"))
+        exercise_id = cast(int, request.form.get("exercise_template_id"))
+        workouts_repo.add_exercise_to_workout(user_id, template_id, exercise_id)
+        return redirect(url_for("workout_templates"))
     templates = exercises_repo.get_exercise_templates(user_id)
     adopted_templates = exercises_repo.get_adopted_exercise_templates(user_id)
-    templates.append(adopted_templates)
+    for t in adopted_templates:
+        templates.append(t)
     return render_template("workout-add-exercises.html",
                            templates = templates)
 

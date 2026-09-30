@@ -38,17 +38,17 @@ def get_exercise_user_id(exercise_id: int) -> int:
 def get_exercise_template(template_id: int) -> Any:
     sql = """
     SELECT 
-        e.id AS id,
-        e.name AS name,
-        e.category AS category,
-        e.target_sets AS sets,
-        e.target_reps AS reps,
-        e.creator_id AS creator_id,
+        et.id AS id,
+        et.name AS name,
+        et.category AS category,
+        et.target_sets AS sets,
+        et.target_reps AS reps,
+        et.creator_id AS creator_id,
         u.username AS creator_name
-    FROM exercise_template e
+    FROM exercise_template et
     JOIN "user" u
-        ON e.creator_id = u.id
-    WHERE e.id = ? 
+        ON et.creator_id = u.id
+    WHERE et.id = ? 
     """ 
     r = query(sql, [template_id])
     return r[0] if r else None
@@ -211,7 +211,6 @@ def delete_exercise_template(user_id: int, template_id: int):
         else:
             sql = "DELETE FROM user_exercise_template WHERE user_id = ? AND exercise_template_id = ?"
             execute(sql, [user_id, template_id])
-            #print("Deleted count", row_count())
 
 def delete_exercise_log(user_id: int, exercise_id: int):
     sql = """

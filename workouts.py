@@ -1,4 +1,5 @@
-from database import query, execute, insert_id
+from typing import Any
+from database import get_connection, query, execute, insert_id, row_count
 
 def add_my_workout_template(user_id: int, name: str, description: str) -> int:
     sql = "INSERT INTO workout_template (creator_id, workout_plan_id, name, description) VALUES (?, ?, ?, ?)"
@@ -9,6 +10,80 @@ def add_workout_exercise_template(workout_template_id: int, exercise_template_id
     sql = "INSERT INTO workout_exercise_template (workout_template_id, exercise_template_id, order_index) VALUES (?, ?, ?)"
     execute(sql, [workout_template_id, exercise_template_id, order_index])
     return insert_id()
+
+def add_exercise_to_workout(user_id: int, workout_template_id: int, exercise_template_id):
+    print("add_exercise_to_workout")
+    sql = """
+    INSERT INTO workout_exercise_template (workout_template_id, exercise_template_id, order_index)
+    SELECT 
+        ?, 
+        ?,
+        COALESCE(
+            (SELECT MAX(order_index) + 1 
+             FROM workout_exercise_template 
+             WHERE workout_template_id = ?), 
+            0
+        )
+    WHERE EXISTS (
+        SELECT 1 
+        FROM workout_template 
+        WHERE id = ? AND creator_id = ?
+    )
+    """
+    execute(sql, [
+        workout_template_id,
+        exercise_template_id,
+        workout_template_id,
+        workout_template_id,
+        user_id
+    ])
+    #return insert_id()
+
+def get_workout_template_exercises(user_id: int, workout_template_id: int) -> list:
+    sql = """
+    SELECT 
+        wet.id AS id,
+        wet.workout_template_id AS workout_template_id,
+        wet.exercise_template_id AS exercise_template_id,
+        wet.order_index AS order_index,
+        et.name AS name,
+        et.category AS category,
+        et.target_sets AS sets,
+        et.target_reps AS reps
+    FROM workout_exercise_template wet
+    JOIN exercise_template et 
+        ON wet.exercise_template_id = et.id
+    JOIN workout_template wt 
+        ON wet.workout_template_id = wt.id
+    LEFT JOIN user_workout_template uwt 
+        ON wt.id = uwt.workout_template_id AND uwt.user_id = ?
+    WHERE wet.workout_template_id = ?
+    AND (wt.creator_id = ? OR uwt.user_id IS NOT NULL)
+    ORDER BY wet.order_index ASC, wet.id ASC
+    """
+    return query(sql, [user_id, workout_template_id, user_id])
+
+def get_workout_template_creator_id(template_id: int) -> int:
+    sql = "SELECT creator_id FROM workout_template WHERE id = ?"
+    r = query(sql, [template_id])
+    return r[0]["creator_id"] if r else -1
+
+def get_workout_template(template_id: int) -> Any:
+    sql = """
+    SELECT 
+        wt.id AS id,
+        wt.name AS name,
+        wt.description AS description,
+        wt.creator_id AS creator_id,
+        u.username AS creator_name
+    FROM workout_template wt
+    JOIN "user" u
+        ON wt.creator_id = u.id
+    WHERE wt.id = ? 
+    """ 
+    r = query(sql, [template_id])
+    return r[0] if r else None
+
 
 def get_workout_templates(user_id: int) -> list:
     sql = """
@@ -95,3 +170,51 @@ def get_workout_logs(user_id: int) -> list:
     ORDER BY w.started_at DESC
     """
     return query(sql, [user_id])
+
+def update_workout_template(user_id: int, template_id: int, name: str, description):
+    description_or_null = (description.strip() or None) if description else None 
+    sql = """
+    UPDATE workout_template
+    SET name = ?, description = ?
+    WHERE id = ? AND creator_id = ?
+    """
+    execute(sql, [
+        name.strip(),
+        description_or_null,
+        template_id,
+        user_id
+    ])
+
+def delete_workout_template(user_id: int, template_id: int):
+    creator_id = get_workout_template_creator_id(template_id)
+    if creator_id != -1:
+        user_is_creator = creator_id == user_id
+        if user_is_creator:
+            connection = get_connection()
+            with connection:
+                sql = "DELETE FROM workout_exercise_template WHERE workout_template_id = ?"
+                connection.execute(sql, [template_id])
+                sql = "DELETE FROM workout_template WHERE id = ? AND creator_id = ?"
+                connection.execute(sql, [template_id, user_id])
+            connection.close()
+        else:
+            sql = "DELETE FROM user_workout_template WHERE user_id = ? AND workout_template_id = ?"
+            execute(sql, [user_id, template_id])
+
+def remove_exercise_from_workout(user_id: int, workout_template_id: int, exercise_template_id: int):
+    sql = """
+    DELETE FROM workout_exercise_template
+    WHERE workout_template_id = ?
+    AND exercise_template_id = ?
+    AND EXISTS (
+        SELECT 1 
+        FROM workout_template 
+        WHERE id = ? AND creator_id = ?
+    )
+    """
+    execute(sql, [
+        workout_template_id,
+        exercise_template_id,
+        workout_template_id,
+        user_id,
+    ])
