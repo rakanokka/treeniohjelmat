@@ -8,6 +8,10 @@ def get_connection() -> sqlite3.Connection:
     connection.row_factory = sqlite3.Row
     return connection
 
+def query_with(connection: sqlite3.Connection, sql: str, params = []) -> list:
+    result = connection.execute(sql, params).fetchall()
+    return result
+
 def query(sql: str, params = []) -> list:
     connection = get_connection()
     result = connection.execute(sql, params).fetchall()

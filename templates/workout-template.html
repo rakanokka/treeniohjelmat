@@ -35,6 +35,11 @@
 		<input type="hidden" name="is_delete_template" value="true">
         <button type="submit" class="btn">Poista</button>	
     </form>
+	<form action="" method="POST" class="form-stacked">
+		<input type="hidden" name="is_activate_template" value="true">
+		<input type="hidden" name="template_name" value="{{ template.name }}">	
+        <button type="submit" class="btn">Tee treeni</button>	
+    </form>
 	{% endif %}
 	<br>
 	<h2>Harjoitukset</h2>

@@ -62,13 +62,41 @@ def get_workout_templates_usage_count(user_id: int, limit = 5) -> list:
         wt.name,
         wt.description,
         wt.created_at,
-        COUNT(uwt.user_id) AS adopted_by_others_count
+        COUNT(DISTINCT uwt.user_id) AS adopted_by_others_count,
+        COUNT(DISTINCT wet.id) AS exercise_count
     FROM workout_template wt
     LEFT JOIN user_workout_template uwt 
         ON wt.id = uwt.workout_template_id
+    LEFT JOIN workout_exercise_template wet 
+        ON wt.id = wet.workout_template_id
     WHERE wt.creator_id = ?
     GROUP BY wt.id
     ORDER BY adopted_by_others_count DESC, wt.created_at DESC
+    LIMIT ?
+    """
+    return query(sql, [user_id, limit])
+
+def get_recent_workouts(user_id: int, limit: int = 5) -> list:
+    sql = """
+    SELECT 
+        w.id AS workout_id,
+        w.started_at AS date,
+        w.name AS workout_name,
+        CAST(
+            ROUND((JULIANDAY(w.ended_at) - JULIANDAY(w.started_at)) * 86400 / 60)
+        AS INTEGER) AS duration_min,
+        COUNT(DISTINCT e.id) AS exercise_count,
+        COUNT(es.id) AS total_sets
+    FROM workout_log w
+    LEFT JOIN workout_template wt 
+        ON w.workout_template_id = wt.id
+    LEFT JOIN exercise_log e 
+        ON e.workout_id = w.id
+    LEFT JOIN exercise_set es 
+        ON es.exercise_id = e.id
+    WHERE w.user_id = ?
+    GROUP BY w.id
+    ORDER BY w.started_at DESC
     LIMIT ?
     """
     return query(sql, [user_id, limit])

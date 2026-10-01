@@ -85,12 +85,14 @@ def profile(user_id: int) -> str | Any:
     profile_info = users_repo.get_user_profile_info(user_id)
     if not profile_info:
         abort(404)
-    favourites = users_repo.get_favourite_exercise_categories(user_id)
     workout_templates = users_repo.get_workout_templates_usage_count(user_id)
+    workouts = users_repo.get_recent_workouts(user_id)
+    favourites = users_repo.get_favourite_exercise_categories(user_id)
     return render_template("profile.html", 
                            profile_info = profile_info,
-                           favourites = favourites, 
-                           workout_templates = workout_templates)
+                           workout_templates = workout_templates,
+                           workouts = workouts,
+                           favourites = favourites) 
 
 # Exercises
 
@@ -240,6 +242,14 @@ def view_workout_template(template_id: int) -> str | Any:
         if request.form.get("is_delete_template") == "true":
             workouts_repo.delete_workout_template(user_id, template_id)
             return redirect(url_for("workout_templates"))
+        
+        if request.form.get("is_activate_template") == "true":
+            name = request.form.get("template_name")
+            if not name:
+                abort(500)
+            workouts_repo.add_workout_log(user_id, template_id, name) 
+            return redirect(url_for("workouts"))
+        
         if request.form.get("is_remove_exercise") == "true":
             exercise_id = cast(int, request.form.get("exercise_template_id"))
             print(template_id, exercise_id)

@@ -1,5 +1,5 @@
 from typing import Any
-from database import get_connection, query, execute, insert_id, row_count
+from database import get_connection, query, execute, insert_id, query_with, row_count
 
 def add_my_workout_template(user_id: int, name: str, description: str) -> int:
     sql = "INSERT INTO workout_template (creator_id, workout_plan_id, name, description) VALUES (?, ?, ?, ?)"
@@ -10,6 +10,42 @@ def add_workout_exercise_template(workout_template_id: int, exercise_template_id
     sql = "INSERT INTO workout_exercise_template (workout_template_id, exercise_template_id, order_index) VALUES (?, ?, ?)"
     execute(sql, [workout_template_id, exercise_template_id, order_index])
     return insert_id()
+
+def add_workout_log(user_id: int, workout_template_id: int, workout_name: str):
+    connection = get_connection()
+    sql = """
+    INSERT INTO workout_log (user_id, workout_template_id, name, started_at)
+    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+    """
+    r = connection.execute(sql, [user_id, workout_template_id, workout_name])
+    connection.commit()
+    workout_id = r.lastrowid
+    
+    sql = """
+    SELECT 
+        et.id AS exercise_template_id,
+        et.name,
+        et.target_sets,
+        et.target_reps 
+    FROM workout_exercise_template wet
+    JOIN exercise_template et 
+        ON wet.exercise_template_id = et.id
+    WHERE wet.workout_template_id = ?
+    ORDER BY wet.order_index ASC
+    """
+    exercises = query_with(connection, sql, [workout_template_id])
+    
+    for e in exercises:
+        exercise_template_id = e["exercise_template_id"]
+        exercise_name = e["name"]
+        sql = """
+        INSERT INTO exercise_log (workout_id, exercise_template_id, name)
+        VALUES (?, ?, ?)
+        """
+        connection.execute(sql, [workout_id, exercise_template_id, exercise_name])
+    
+    connection.commit()
+    connection.close()
 
 def add_exercise_to_workout(user_id: int, workout_template_id: int, exercise_template_id):
     print("add_exercise_to_workout")

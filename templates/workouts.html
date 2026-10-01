@@ -16,7 +16,9 @@
 		<div class="list-item workout-item">
 			<p class="item-date">{{ w.started_at }}</p>
 			<p class="bold-text">{{ w.name }}</p>
+			{% if w.notes %}
 			<p class="italic-text">{{ w.notes }}</p>
+			{% endif %}
 			<div class="item-extra">
 				<span>[Tarkastele-painike]</span>
 			</div>

@@ -5,31 +5,46 @@
 {% block content %}
 <h2>Käyttäjäprofiili: {{ profile_info['username'] }}</h2>
 <br>
-<h3>Treeni- ja liikepohjat</h3>
-<br>
 <ul>
-	<li>Treenipohjia luotu: {{profile_info['created_templates_count']}}</li>
-	<li>Treenipohjia käytössä: {{profile_info['adopted_templates_count']}}</li>
-	<li>Liikepohjia luotu: {{profile_info['created_exercises_count']}}</li>
-	<li>Liikepohjia käytössä: {{profile_info['adopted_exercises_count']}}</li>
+	<li>Treenipohjia luotu: {{profile_info['created_templates_count']}} | käytössä: {{profile_info['adopted_templates_count']}}</li>
+	<li>Liikepohjia luotu: {{profile_info['created_exercises_count']}} | käytössä: {{profile_info['adopted_exercises_count']}}</li>
 	<li>Treenejä suoritettu: {{profile_info['completed_workouts_count']}}</li>
 	<li>Liikkeitä suoritettu: {{profile_info['completed_exercises_count']}}</li>
 </ul>
 <br>
-<h3>Omat harjoitusryhmät</h3>
+<h3>Treenipohjat</h3>
 <br>
-<ul>
-{% for f in favourites %}
-	<li>{{ f['category_name'] }} | Liikepohjia luotu: {{f['templates_usage_count']}} | Lisätty treeniin: {{f['created_exercises_count']}}</li>
-{% endfor %}
-</ul>
-<br>
-<h3>Omat treenipohjat</h3>
-<br>
+{% if workout_templates %}
 <ul>
 {% for wt in workout_templates %}
-	<li>{{ wt['name'] }} | {{wt['created_at']}} | Muilla käytössä: {{wt['adopted_by_others_count']}}</li>
+<li>{{ wt['name'] }} {% if wt['description'] %}({{wt['description']}}) {% endif %}| liikkeitä: {{ wt['exercise_count'] }} | muilla käytössä: {{wt['adopted_by_others_count']}}</li>
 {% endfor %}
 </ul>
-
+{% else %}
+<p>Ei lisättyjä treenipohjia<p>
+{% endif %}
+<br>
+<h3>Treenit</h3>
+<br>
+{% if workouts %}
+<ul>
+{% for w in workouts %}
+	<li>{{ w['workout_name'] }} | {{w['exercise_count']}} liikettä | {{w['total_sets']}} sarjaa | {{w['duration_min']}} min | {{w['date']}}</li>
+{% endfor %}
+</ul>
+{% else %}
+<p>Ei suoritettuja treenejä<p>
+{% endif %}
+<br>
+<h3>Liikepohjat harjoitusryhmittäin</h3>
+<br>
+{% if favourites %}
+<ul>
+{% for f in favourites %}
+	<li>{{ f['category_name'] }} | liikepohjia luotu: {{f['created_exercises_count']}} | lisätty treenipohjaan: {{f['templates_usage_count']}}</li>
+{% endfor %}
+</ul>
+{% else %}
+<p>Ei lisättyjä liikepohjia<p>
+{% endif %}
 {% endblock %}

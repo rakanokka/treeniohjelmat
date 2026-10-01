@@ -16,7 +16,7 @@
 				{% if session.get('user_id') %}
 				<li><a href="{{ url_for('workouts') }}">Treenit</a></li>
 				<li><a href="{{ url_for('exercises') }}">Harjoitukset</a></li>
-				<li><a href="{{ url_for('profile', user_id = session.get('user_id')) }}">Oma tili / {{ session.get('username') }}</a></li>
+				<li><a href="{{ url_for('profile', user_id = session.get('user_id')) }}">Oma profiili | {{ session.get('username') }}</a></li>
 				<form class="link-button" action="{{ url_for('logout') }}" method="POST">
 					<button type="submit" class="link-button">
 						Kirjaudu ulos
