@@ -26,7 +26,17 @@ if not DB_PATH.exists():
 
 @app.route("/")
 def home() -> str:
-    return render_template("home.html")
+    username = session.get("username")
+    user_id = session.get("user_id")
+    users = []
+    authenticated = not(username is None)
+    if authenticated:
+        users = users_repo.get_other_users(cast(int, user_id))
+    return render_template("home.html",
+                           authenticated = authenticated,
+                           users = users,
+                           username = username,
+                           user_id = user_id)
 
 @app.route("/register", methods = ["GET", "POST"])
 def register() -> str | Any:
@@ -60,9 +70,6 @@ def login() -> str | Any:
         return redirect(url_for("login"))
     return render_template("login.html")
 
-def error_page(message: str) -> str:
-    return render_template("error.html", message = message)
-
 ### All routes below are auth-protected ###
 
 @app.route("/logout", methods = ["POST"])
@@ -71,6 +78,19 @@ def logout() -> Any:
         del session["user_id"]
         del session["username"]
     return redirect(url_for("home"))
+
+@app.route("/profile/<int:user_id>")
+def profile(user_id: int) -> str | Any:
+    get_auth_user()
+    profile_info = users_repo.get_user_profile_info(user_id)
+    if not profile_info:
+        abort(404)
+    favourites = users_repo.get_favourite_exercise_categories(user_id)
+    workout_templates = users_repo.get_workout_templates_usage_count(user_id)
+    return render_template("profile.html", 
+                           profile_info = profile_info,
+                           favourites = favourites, 
+                           workout_templates = workout_templates)
 
 # Exercises
 

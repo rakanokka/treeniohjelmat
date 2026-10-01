@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}XFit{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename = 'css/style.css') }}">
 </head>
 <body>
 
@@ -16,7 +16,7 @@
 				{% if session.get('user_id') %}
 				<li><a href="{{ url_for('workouts') }}">Treenit</a></li>
 				<li><a href="{{ url_for('exercises') }}">Harjoitukset</a></li>
-				<li><a href="#">Oma tili / {{ session.get('username') }}</a></li>
+				<li><a href="{{ url_for('profile', user_id = session.get('user_id')) }}">Oma tili / {{ session.get('username') }}</a></li>
 				<form class="link-button" action="{{ url_for('logout') }}" method="POST">
 					<button type="submit" class="link-button">
 						Kirjaudu ulos
@@ -31,7 +31,7 @@
     </header>
 
     <main>
-		{% block content %}{% endblock %}
+		{% block content %}{% endblock %}	
 		{% with messages = get_flashed_messages() %}
 			{% if messages %}
 			<ul class=flashes>

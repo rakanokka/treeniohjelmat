@@ -1,3 +1,6 @@
+DROP TABLE IF EXISTS workout_template_comment;
+DROP TABLE IF EXISTS workout_template_tag;
+DROP TABLE IF EXISTS tag;
 DROP TABLE IF EXISTS exercise_set;
 DROP TABLE IF EXISTS exercise_log;
 DROP TABLE IF EXISTS user_exercise_template;
@@ -101,4 +104,27 @@ CREATE TABLE exercise_set (
     reps INTEGER NOT NULL CHECK(reps >= 0),
     weight REAL NOT NULL CHECK(weight >= 0),
     FOREIGN KEY (exercise_id) REFERENCES exercise_log(id) ON DELETE CASCADE
+);
+
+CREATE TABLE tag (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name TEXT NOT NULL UNIQUE
+);
+
+CREATE TABLE workout_template_tag (
+	workout_template_id INTEGER NOT NULL,
+	tag_id INTEGER NOT NULL,
+	PRIMARY KEY (workout_template_id, tag_id),
+	FOREIGN KEY (workout_template_id) REFERENCES workout_template(id) ON DELETE CASCADE,
+	FOREIGN KEY (tag_id) REFERENCES tag(id) ON DELETE CASCADE
+);
+
+CREATE TABLE workout_template_comment (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	workout_template_id INTEGER NOT NULL,
+	user_id INTEGER NOT NULL,
+	content TEXT NOT NULL,
+	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	FOREIGN KEY (workout_template_id) REFERENCES workout_template(id) ON DELETE CASCADE,
+	FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE
 );

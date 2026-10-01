@@ -1,0 +1,35 @@
+{% extends "layout.html" %}
+
+{% block title %}Käyttäjäprofiili &ndash; XFit{% endblock %}
+
+{% block content %}
+<h2>Käyttäjäprofiili: {{ profile_info['username'] }}</h2>
+<br>
+<h3>Treeni- ja liikepohjat</h3>
+<br>
+<ul>
+	<li>Treenipohjia luotu: {{profile_info['created_templates_count']}}</li>
+	<li>Treenipohjia käytössä: {{profile_info['adopted_templates_count']}}</li>
+	<li>Liikepohjia luotu: {{profile_info['created_exercises_count']}}</li>
+	<li>Liikepohjia käytössä: {{profile_info['adopted_exercises_count']}}</li>
+	<li>Treenejä suoritettu: {{profile_info['completed_workouts_count']}}</li>
+	<li>Liikkeitä suoritettu: {{profile_info['completed_exercises_count']}}</li>
+</ul>
+<br>
+<h3>Omat harjoitusryhmät</h3>
+<br>
+<ul>
+{% for f in favourites %}
+	<li>{{ f['category_name'] }} | Liikepohjia luotu: {{f['templates_usage_count']}} | Lisätty treeniin: {{f['created_exercises_count']}}</li>
+{% endfor %}
+</ul>
+<br>
+<h3>Omat treenipohjat</h3>
+<br>
+<ul>
+{% for wt in workout_templates %}
+	<li>{{ wt['name'] }} | {{wt['created_at']}} | Muilla käytössä: {{wt['adopted_by_others_count']}}</li>
+{% endfor %}
+</ul>
+
+{% endblock %}
