@@ -1,0 +1,83 @@
+{% extends "layout.html" %}
+
+{% block title %}Treenit &ndash; XFit{% endblock %}
+
+{% block content %}
+<div class="page-nav workouts-nav">
+	<ul class="no-bullets">
+		<li><a href="{{ url_for('workouts') }}">Treenit</a></li>
+		<li><a href="{{ url_for('workout_templates') }}">Treenipohjat</a></li>
+		<li><a href="{{ url_for('workouts_search') }}">Etsi treenipohjia</a></li>
+    </ul>
+</div>
+<div class="page-container">
+	<h2>Treeni</h2>
+	<p>{{ workout.started_at }}</p>
+	<ul>
+		<li>Treeni: {{ workout.name }}</li>
+		{% if workout.notes %}
+		<li>Huomiot: {{ workout.notes }}</li>
+		{% endif %}
+	<ul>
+	<form action="" method="POST" class="form-stacked">
+		<input type="hidden" name="is_delete_workout" value="true">
+        <button type="submit" class="btn">Poista</button>
+    </form>
+	<br>
+	<h2>Treenin liikkeet</h2>
+	<br>
+	{% if workout_exercises %}
+	<ul>
+	{% for e in workout_exercises %}	
+		<li style="display: flex">
+			{{e.name}} | {{e.sets}} sarjaa | {{e.reps}} toistoa | korkein sarjapaino {{ e.max_weight }} kg
+			<span style="height: 1px; width: 2rem"></span>
+			<form action="" method="POST" class="form-stacked">
+				<input type="hidden" name="is_delete_exercise" value="true">
+				<input type="hidden" name="exercise_id" value="{{ e.id }}">	
+				<button type="submit" class="btn">Poista</button>
+			</form>
+		</li>
+	{% endfor %}
+	</ul>
+	{% else %}
+	<p style="color: red">Ei lisättyjä liikkeitä</p>
+	{% endif %}
+	<br>
+	<h2>Lisää liikkeitä</h2>
+	<div class="list-container">
+		<br>
+		{% if workout_exercise_templates %}
+		<p>Syötä sarjan toistot ja painot pilkulla eroteltuina listoina. Esimerkiksi jos liikkeellä on kolme sarjaa, söytä esimerkiksi: <code>8,10,12</code> ja <code>100,95,90</code>.</p>
+		{% for wet in workout_exercise_templates %}	
+		<div class="list-item workout-item">
+			<p class="bold-text">{{ wet.name }}</p>
+			<div class="item-extra">
+				<form action="" method="POST" class="form-stacked">
+					<label for="sets-{{wet.id}}">Sarjat:</label>
+					<input type="number" id="sets-{{wet.id}}" name="sets" min="1" value="{{ wet.target_sets }}" required>
+
+					<label for="reps-{{wet.id}}">Toistot:</label>
+					<input 
+						type="text" 
+						id="reps-{{wet.id}}" 
+						name="reps" 
+						value="{% for _ in range(wet.target_sets) %}{{ wet.target_reps }}{% if not loop.last %},{% endif %}{% endfor %}" 
+						required>
+					
+					<label for="weights-{{wet.id}}">Painot:</label>
+					<input type="text" id="weights-{{wet.id}}" name="weights" required>
+					
+					<input type="hidden" name="wet_name" value="{{ wet.name }}">	
+					<input type="hidden" name="wet_id" value="{{ wet.id }}">	
+					<button type="submit" class="btn">Lisää treeniin</button>
+				</form>
+			</div>
+		</div>
+		{% endfor %}
+		{% else %}
+		<p>Treenipohjalla ei ole liikkeitä</p>
+		{% endif %}
+	</div>	
+</div>
+{% endblock %}

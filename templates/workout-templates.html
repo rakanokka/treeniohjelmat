@@ -11,6 +11,7 @@
 </div>
 <div class="page-container">
 	<h2>Luo treenipohja</h2>
+	<br>
 	<form action="{{ url_for('workout_templates') }}" method="POST">
         <label for="name">Treenin nimi:</label>
         <input type="text" id="name" name="name" required>
@@ -20,6 +21,7 @@
     </form>
 	<br>
 	<h2>Luodut pohjat</h2>
+	{% if my_templates %}
 	<div class="list-container">
 	{% for wt in my_templates %}	
 		<div class="list-item workout-item">
@@ -52,8 +54,13 @@
 		</div>
 	{% endfor %}
 	</div>
+	{% else %}
+	<br>
+	<p>Ei luotuja treenipohjia</p>
+	{% endif %}
 	<br>
 	<h2>Käytössä olevat pohjat</h2>
+	{% if adopted_templates %}
 	<div class="list-container">
 	{% for wt in adopted_templates %}	
 		<div class="list-item workout-item">
@@ -81,5 +88,9 @@
 		</div>
 	{% endfor %}
 	</div>
+	{% else %}
+	<br>
+	<p>Ei käytössä olevia treenipohjia</p>
+	{% endif %}
 </div>
 {% endblock %}

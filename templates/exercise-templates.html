@@ -11,23 +11,21 @@
 </div>
 <div class="page-container">
 	<h2>Luo harjoituspohja</h2>
+	<br>
 	<form action="{{ url_for('exercise_templates') }}" method="POST" class="form-stacked">
         <label for="name">Harjoituksen nimi:</label>
         <input type="text" id="name" name="name" required>
-		
 		<label for="category">Liikeryhmä:</label>
         <input type="text" id="category" name="category">
-        
 		<label for="target_sets">Sarjatavoite:</label>
-        <input type="number" id="target_sets" name="target_sets" min="1" value="3" required>
-
+		<input type="number" id="target_sets" name="target_sets" min="1" value="3" required>
         <label for="target_reps">Toistotavoite:</label>
         <input type="number" id="target_reps" name="target_reps" min="1" value="10" required>
-
         <button type="submit" class="btn">Luo</button>
     </form>
 	<br>
 	<h2>Luodut pohjat</h2>
+	{% if my_templates %}
 	<div class="list-container">
 	{% for et in my_templates %}	
 		<div class="list-item exercise-item">
@@ -53,8 +51,13 @@
 		</div>
 	{% endfor %}
 	</div>
+	{% else %}
+	<br>
+	<p>Ei luotuja harjoituspohjia</p>
+	{% endif %}
 	<br>
 	<h2>Käytössä olevat pohjat</h2>
+	{% if adopted_templates %}
 	<div class="list-container">
 	{% for et in adopted_templates %}	
 		<div class="list-item exercise-item">
@@ -80,5 +83,9 @@
 		</div>
 	{% endfor %}
 	</div>
+	{% else %}
+	<br>
+	<p>Ei käytössä olevia harjoituspohjia</p>
+	{% endif %}
 </div>
 {% endblock %}

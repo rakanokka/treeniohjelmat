@@ -98,6 +98,17 @@ footer {
 	padding-bottom: var(--pvh-app-layout);
 }
 
+.comments-section {
+	.comment-form {
+		display: flex;
+		align-items: flex-end;
+		textarea {
+			display: block;
+			flex-grow: 1;
+		}
+	}
+}
+
 /* Register/login page styles */
 
 .auth-form-container {

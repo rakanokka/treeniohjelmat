@@ -18,27 +18,27 @@
 		</form>
 	</div>
 	<div class="list-container">
-	{% for e in templates %}	
+	{% for et in templates %}	
 		<div class="list-item exercise-item">
-			<p class="bold-text">{{ e.name }}</p>
-			<p>{{ e.category }}</p>
+			<p class="bold-text">{{ et.name }}</p>
+			<p>{{ et.category }}</p>
 			<div class="item-info-entry">
 				<p class="key">Sarjat:</p>	
-				<p class="value">{{ e.sets }}</p>	
+				<p class="value">{{ et.sets }}</p>	
 			</div>
 			<div class="item-info-entry">
 				<p class="key">Toistot:</p>	
-				<p class="value">{{ e.reps }}</p>	
+				<p class="value">{{ et.reps }}</p>	
 			</div>
 			<div class="item-extra">
-				<span>[Käyttäjien määrä]</span>
+				{#<span>[Käyttäjien määrä]</span>#}
 				<span>
-					<a href="{{ url_for('view_exercise_template', template_id = e.id, from_search = False) }}">
+					<a href="{{ url_for('view_exercise_template', template_id = et.id) }}">
 						<button class="btn" type="submit">Tarkastele</button>
 					</a>	
 				</span>
-				<form action="{{ url_for('exercises_add_template') }}" method="POST">
-					<input type="hidden" name="template_id" value="{{ e.id }}">
+				<form action="" method="POST">
+					<input type="hidden" name="template_id" value="{{ et.id }}">
 					<button class="btn" type="submit">Ota käyttöön</button>
 				</form>
 			</div>

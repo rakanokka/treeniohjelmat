@@ -15,8 +15,16 @@
 	<p>{{ exercise.date }}</p>
 	<ul>
 		<li>Harjoitus: {{ exercise.name }}</li>
+		{% if exercise.sets > 0 %}
 		<li>Sarjat: {{ exercise.sets }}</li>
+		{% else %}
+		<li style="color: red">Harjoituksella ei ole sarjoja</li>
+		{% endif %}
+		{% if exercise.reps > 0 %}
 		<li>Toistot: {{ exercise.reps }}</li>
+		{% else %}
+		<li style="color: red">Harjoituksella ei ole toistoja</li>
+		{% endif %}
 		{% if exercise.notes %}
 		<li>Huomiot: {{ exercise.notes }}</li>
 		{% endif %}

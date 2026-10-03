@@ -11,6 +11,7 @@
 </div>
 <div class="page-container">
 	<h2>Treenit</h2>
+	{% if workouts %}
 	<div class="list-container">
 	{% for w in workouts %}	
 		<div class="list-item workout-item">
@@ -20,10 +21,18 @@
 			<p class="italic-text">{{ w.notes }}</p>
 			{% endif %}
 			<div class="item-extra">
-				<span>[Tarkastele-painike]</span>
+				<span>
+					<a href="{{ url_for('view_workout', workout_id = w.id) }}">
+						<button class="btn" type="submit">Tarkastele</button>
+					</a>	
+				</span>
 			</div>
 		</div>
 	{% endfor %}
 	</div>	
+	{% else %}
+	<br>
+	<p>Ei suoritettuja treenejä</p>
+	{% endif %}
 </div>
 {% endblock %}

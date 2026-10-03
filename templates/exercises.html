@@ -11,12 +11,15 @@
 </div>
 <div class="page-container">
 	<h2>Harjoitukset</h2>
+	{% if exercises %}
 	<div class="list-container">
 	{% for e in exercises %}	
 		<div class="list-item exercise-item">
 			<p class="bold-text">{{ e.name }}</p>
 			<p>{{ e.category }}</p>
+			{% if e.notes %}
 			<p class="italic-text">{{ e.notes }}</p>
+			{% endif %}
 			<div class="item-extra">
 				<span>
 					<a href="{{ url_for('view_exercise', exercise_id = e.id) }}">
@@ -27,5 +30,9 @@
 		</div>
 	{% endfor %}
 	</div>
+	{% else %}
+	<br>
+	<p>Ei suoritettuja harjoituksia</p>
+	{% endif %}
 </div>
 {% endblock %}

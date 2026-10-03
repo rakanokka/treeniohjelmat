@@ -1,7 +1,7 @@
 from typing import Any
-from database import query, execute, insert_id, get_connection, row_count
+from database import query, execute, get_connection
 
-def add_my_exercise_template(user_id: int, name: str, category: str, target_sets: int, target_reps: int) -> int:
+def add_my_exercise_template(user_id: int, name: str, category: str, target_sets: int, target_reps: int):
     category_or_null = (category.strip() or None) if category else None 
     sql = "INSERT INTO exercise_template (creator_id, name, category, target_sets, target_reps) VALUES (?, ?, ?, ?, ?)"
     execute(sql, [
@@ -11,12 +11,30 @@ def add_my_exercise_template(user_id: int, name: str, category: str, target_sets
         target_sets, 
         target_reps
     ])
-    return insert_id()
 
-def add_adopted_exercise_template(user_id: int, template_id: int) -> int:
+def add_adopted_exercise_template(user_id: int, template_id: int):
     sql = "INSERT INTO user_exercise_template (user_id, exercise_template_id) VALUES (?, ?)"
     execute(sql, [user_id, template_id])
-    return insert_id()
+
+def add_excercise_template_comment(user_id: int, template_id: int, content: str):
+    sql = "INSERT INTO user_comment (user_id, exercise_template_id, content) VALUES (?, ?, ?)"
+    execute(sql, [user_id, template_id, content])
+
+def get_excercise_template_comments(template_id: int) -> list:
+    sql = """
+    SELECT 
+        c.id AS id,
+        c.content AS content,
+        c.created_at AS created_at,
+        c.user_id AS author_id,
+        u.username AS author_name
+    FROM user_comment c
+    JOIN "user" u 
+        ON c.user_id = u.id
+    WHERE c.exercise_template_id = ?
+    ORDER BY c.created_at ASC
+    """
+    return query(sql, [template_id])
 
 def get_exercise_template_creator_id(template_id: int) -> int:
     sql = "SELECT creator_id FROM exercise_template WHERE id = ?"
@@ -80,6 +98,23 @@ def get_exercise_templates(user_id: int) -> list:
     """
     return query(sql, [user_id, user_id])
 
+def get_exercise_templates_in_workout(workout_template_id: int) -> list:
+    sql = """
+    SELECT 
+        et.id AS id,
+        et.name AS name,
+        et.category AS category,
+        et.target_sets AS target_sets,
+        et.target_reps AS target_reps,
+        wet.order_index AS order_index
+    FROM workout_exercise_template wet
+    JOIN exercise_template et 
+        ON wet.exercise_template_id = et.id
+    WHERE wet.workout_template_id = ?
+    ORDER BY wet.order_index ASC
+    """
+    return query(sql, [workout_template_id])
+
 def get_adopted_exercise_templates(user_id: int) -> list:
     sql = """
     SELECT 
@@ -131,7 +166,7 @@ def find_exercise_templates(name: str, user_id: int) -> list:
     """ 
     return query(sql, [user_id, user_id, f"%{name.strip()}%"])
 
-def get_exercise_log(exercise_id: int) -> Any:
+def get_exercise_log(exercise_id: int) -> dict | None:
     sql = """
     SELECT 
         e.id AS id,
@@ -140,20 +175,20 @@ def get_exercise_log(exercise_id: int) -> Any:
         e.notes AS notes,
         w.started_at AS date,
         COUNT(es.id) AS sets,
-        SUM(es.reps) AS reps,
-        et.target_sets AS target_sets,
-        et.target_reps AS target_reps,
-        (COUNT(es.id) - et.target_sets) AS sets_diff,
-        (SUM(es.reps) - (et.target_sets * et.target_reps)) AS reps_diff
+        COALESCE(SUM(es.reps), 0) AS reps,
+        COALESCE(et.target_sets, 0) AS target_sets,
+        COALESCE(et.target_reps, 0) AS target_reps,
+        (COUNT(es.id) - COALESCE(et.target_sets, 0)) AS sets_diff,
+        (COALESCE(SUM(es.reps), 0) - (COALESCE(et.target_sets, 0) * COALESCE(et.target_reps, 0))) AS reps_diff
     FROM exercise_log e
     JOIN workout_log w 
         ON e.workout_id = w.id
-    JOIN exercise_set es 
+    LEFT JOIN exercise_set es 
         ON es.exercise_id = e.id
     LEFT JOIN exercise_template et 
         ON e.exercise_template_id = et.id
     WHERE e.id = ?
-    GROUP BY e.id; 
+    GROUP BY e.id
     """
     r = query(sql, [exercise_id])
     return r[0] if r else None

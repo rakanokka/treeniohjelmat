@@ -13,7 +13,7 @@
 <div class="page-container">
 	{% if has_edit_permission %}
 	<h2>Muokkaa harjoituspohjaa</h2>
-	<form action="{{ url_for('view_exercise_template', template_id = template.id) }}" method="POST" class="form-stacked">
+	<form action="" method="POST" class="form-stacked">
         <label for="name">Harjoituksen nimi:</label>
 		<input type="text" id="name" name="name" value="{{ template.name }}" required>
 		
@@ -40,9 +40,40 @@
 		<li>Toistotavoite: {{ template.reps }}</li>
 		<li>Luoja: {{ template.creator_name }}</li>
 	<ul>
-	<form action="{{ url_for('view_exercise_template', template_id = template.id) }}" method="POST" class="form-stacked">
+	{% if has_edit_permission %}
+	<form action="" method="POST" class="form-stacked">
 		<input type="hidden" name="is_delete" value="true">
         <button type="submit" class="btn">Poista</button>	
     </form>
+	{% endif %}
+	<br>
+	<div class="comments-section">
+		<h3>Kommentit ({{ comments | length }})</h3>
+		<br>
+		<form action="" method="POST" class="comment-form">
+			<textarea name="content" placeholder="Kirjoita kommentti..." rows="3" required></textarea>
+			<input type="hidden" name="is_comment" value="true">
+			<button type="submit" class="btn">Lähetä</button>
+		</form>
+		<br>
+		<div class="comments-list">
+		{% for c in comments %}
+			<div class="comment-card">
+				{% if c.avatar %}
+				<div class="avatar">{{c.avatar}}</div>
+				{% else %}
+				<div class="avatar">X</div>
+				{% endif %}
+				<div class="comment-body">
+					<div class="comment-header">
+						<span class="author-name">{{ c.author_name }}</span>
+						<span class="comment-date">{{ c.created_at }}</span>
+					</div>
+					<div class="comment-text">{{ c.content }}</div>
+				</div>
+			</div>	
+		{% endfor %}
+		</div>
+	</div>
 </div>
 {% endblock %}

@@ -3,13 +3,13 @@
 {% block title %}Käyttäjäprofiili &ndash; XFit{% endblock %}
 
 {% block content %}
-<h2>Käyttäjäprofiili: {{ profile_info['username'] }}</h2>
+<h2>Käyttäjäprofiili: {{ profile_info.username }}</h2>
 <br>
 <ul>
-	<li>Treenipohjia luotu: {{profile_info['created_templates_count']}} | käytössä: {{profile_info['adopted_templates_count']}}</li>
-	<li>Liikepohjia luotu: {{profile_info['created_exercises_count']}} | käytössä: {{profile_info['adopted_exercises_count']}}</li>
-	<li>Treenejä suoritettu: {{profile_info['completed_workouts_count']}}</li>
-	<li>Liikkeitä suoritettu: {{profile_info['completed_exercises_count']}}</li>
+	<li>Treenipohjia luotu: {{ profile_info.created_templates_count }} | otettu käyttöön: {{ profile_info.adopted_templates_count }}</li>
+	<li>Liikepohjia luotu: {{ profile_info.created_exercises_count }} | otettu käyttöön: {{ profile_info.adopted_exercises_count }}</li>
+	<li>Treenejä suoritettu: {{ profile_info.completed_workouts_count }}</li>
+	<li>Liikkeitä suoritettu: {{ profile_info.completed_exercises_count }}</li>
 </ul>
 <br>
 <h3>Treenipohjat</h3>
@@ -17,7 +17,7 @@
 {% if workout_templates %}
 <ul>
 {% for wt in workout_templates %}
-<li>{{ wt['name'] }} {% if wt['description'] %}({{wt['description']}}) {% endif %}| liikkeitä: {{ wt['exercise_count'] }} | muilla käytössä: {{wt['adopted_by_others_count']}}</li>
+<li>{{ wt.name }} {% if wt.description %}({{ wt.description }}) {% endif %}| liikkeitä: {{ wt.exercise_count }} | muilla käytössä: {{ wt.adopted_by_others_count }}</li>
 {% endfor %}
 </ul>
 {% else %}
@@ -29,7 +29,7 @@
 {% if workouts %}
 <ul>
 {% for w in workouts %}
-	<li>{{ w['workout_name'] }} | {{w['exercise_count']}} liikettä | {{w['total_sets']}} sarjaa | {{w['duration_min']}} min | {{w['date']}}</li>
+<li>{{ w.workout_name }} | {{ w.exercise_count }} liikettä | {{ w.total_sets }} sarjaa {% if w.duration_min %}| {{ w.duration_min }} min {% endif %}| {{ w.date }}</li>
 {% endfor %}
 </ul>
 {% else %}
@@ -41,7 +41,7 @@
 {% if favourites %}
 <ul>
 {% for f in favourites %}
-	<li>{{ f['category_name'] }} | liikepohjia luotu: {{f['created_exercises_count']}} | lisätty treenipohjaan: {{f['templates_usage_count']}}</li>
+	<li>{{ f.category_name }} | liikepohjia luotu: {{ f.created_exercises_count }} | lisätty treenipohjaan: {{ f.templates_usage_count }}</li>
 {% endfor %}
 </ul>
 {% else %}

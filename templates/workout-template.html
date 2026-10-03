@@ -13,6 +13,7 @@
 <div class="page-container">
 	{% if has_permissions %}
 	<h2>Muokkaa treenipohjaa</h2>
+	<br>
 	<form action="{{ url_for('view_workout_template', template_id = template.id) }}" method="POST" class="form-stacked">
         <label for="name">Treenin nimi:</label>
 		<input type="text" id="name" name="name" value="{{ template.name }}" required>
@@ -30,19 +31,23 @@
 		<li>Luoja: {{ template.creator_name }}</li>
 	<ul>
 	{% endif %}
-	{% if has_permissions %}
-	<form action="" method="POST" class="form-stacked">
-		<input type="hidden" name="is_delete_template" value="true">
-        <button type="submit" class="btn">Poista</button>	
-    </form>
-	<form action="" method="POST" class="form-stacked">
-		<input type="hidden" name="is_activate_template" value="true">
-		<input type="hidden" name="template_name" value="{{ template.name }}">	
-        <button type="submit" class="btn">Tee treeni</button>	
-    </form>
-	{% endif %}
+	<div style="display: flex; gap: 1rem">
+		{% if has_permissions %}
+		<form action="" method="POST" class="form-stacked">
+			<input type="hidden" name="is_delete_template" value="true">
+			<button type="submit" class="btn">Poista</button>	
+		</form>
+		{% endif %}
+		<form action="" method="POST" class="form-stacked">
+			<input type="hidden" name="is_do_workout" value="true">
+			<input type="hidden" name="template_name" value="{{ template.name }}">	
+			<input type="hidden" name="template_desc" value="{{ template.description or "" }}">	
+			<button type="submit" class="btn">Tee treeni</button>	
+		</form>
+	</div>
 	<br>
 	<h2>Harjoitukset</h2>
+	{% if exercises %}	
 	<div class="list-container">
 	{% for et in exercises %}	
 		<div class="list-item exercise-item">
@@ -67,6 +72,39 @@
 			{% endif %}
 		</div>
 	{% endfor %}
+	</div>
+	{% else %}
+	<br>
+	<p>Ei lisättyjä harjoituksia</p>
+	{% endif %}
+	<br>
+	<div class="comments-section">
+		<h3>Kommentit ({{ comments | length }})</h3>
+		<br>
+		<form action="" method="POST" class="comment-form">
+			<textarea name="content" placeholder="Kirjoita kommentti..." rows="3" required></textarea>
+			<input type="hidden" name="is_comment" value="true">
+			<button type="submit" class="btn">Lähetä</button>
+		</form>
+		<br>
+		<div class="comments-list">
+		{% for c in comments %}
+			<div class="comment-card">
+				{% if c.avatar %}
+				<div class="avatar">{{c.avatar}}</div>
+				{% else %}
+				<div class="avatar">X</div>
+				{% endif %}
+				<div class="comment-body">
+					<div class="comment-header">
+						<span class="author-name">{{ c.author_name }}</span>
+						<span class="comment-date">{{ c.created_at }}</span>
+					</div>
+					<div class="comment-text">{{ c.content }}</div>
+				</div>
+			</div>	
+		{% endfor %}
+		</div>
 	</div>
 </div>
 {% endblock %}
