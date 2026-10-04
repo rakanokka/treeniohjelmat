@@ -33,7 +33,7 @@ Sovelluksessa treenien rakenne pohjautuu uudelleenkäytettäviin treenipohjiin (
 4. **Treenin luominen treenipohjasta:**
    * Voit aloittaa uuden treenisuorituksen suoraan treenipohjaan liitetyn **Tee treeni** -painikkeen kautta (löytyy sekä itse luoduista että käyttöön otetuista treenipohjista).
    * Sovellus luo pohjan perusteella valmiin runko-osion, johon voit kirjata todelliset suoritetut sarjat, toistot ja käytetyt painot treenin.
-   * Valmiin treenin tallentaminen luo järjestelmään pysyvän **treenilokin** (*workout log*), jota ei enää muuteta, vaikka alkuperäistä treenipohjaa muokattaisiin myöhemmin.
+   * Valmiin treenin tallentaminen luo järjestelmään pysyvän treenilokin (*workout log*), jota ei enää muuteta, vaikka alkuperäistä treenipohjaa muokattaisiin myöhemmin.
 
 ### Käyttäjäsivut
 
