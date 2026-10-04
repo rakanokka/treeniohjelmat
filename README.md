@@ -18,7 +18,7 @@ Sovelluksessa treenien rakenne pohjautuu uudelleenkäytettäviin treenipohjiin (
 
 1. **Uuden treenipohjan luominen:**
    * Luo uusi treenipohja syöttämällä sille nimi sekä mahdolliset kuvaus- ja luokitustiedot. 
-   * Treenipohja sisältää yhden tai useamman harjoituksen tavoitesarjoineen ja -toistoineen (esim. Kyykky 3 x 8), jotka tulee lisätä erikseen.[1^] Harjoituksia voi lisätä treenipohjaan kaikista itse luoduista tai muiden luomista ja omalle tilille käyttöön otetuista harjoituspohjista.
+   * Treenipohja sisältää yhden tai useamman harjoituksen tavoitesarjoineen ja -toistoineen (esim. Kyykky 3 x 8), jotka tulee lisätä erikseen.[^1] Harjoituksia voi lisätä treenipohjaan kaikista itse luoduista tai muiden luomista ja omalle tilille käyttöön otetuista harjoituspohjista.
    * Voit liittää treeniin luokitusta helpottavia tägejä (esim. `Voima`, `Yläkeho`, `Koti`). Syötetyt tägit kytketään automaattisesti treenipohjaan.
 
 2. **Muiden käyttäjien treenipohjien selaaminen ja haku:**
@@ -112,4 +112,4 @@ Sovellus käynnistyy osoitteessa http://localhost:5000.
 
 ---
 
-[1^]: Nykytotetutuksessa voit tosin lisätä treenilistalle tyhjiä treenipohjia, joilla ei ole harjoituksia.
+[^1]: Nykytotetutuksessa voit tosin lisätä treenilistalle tyhjiä treenipohjia, joilla ei ole harjoituksia.
