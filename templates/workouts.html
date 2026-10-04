@@ -22,6 +22,13 @@
 			{% endif %}
 			<div class="item-extra">
 				<span>
+					<form action="" method="POST" class="form-stacked">
+						<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
+						<input type="hidden" name="workout_id" value="{{ w.id }}">	
+						<button type="submit" class="btn">Poista</button>
+					</form>
+				</span>
+				<span>
 					<a href="{{ url_for('view_workout', workout_id = w.id) }}">
 						<button class="btn" type="submit">Tarkastele</button>
 					</a>	

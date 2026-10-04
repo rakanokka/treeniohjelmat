@@ -2,39 +2,62 @@
 
 XFit on kuntoilijoille suunnattu sovellus, jossa käyttäjät voivat luoda ja jakaa harjoituskertoja tai harjoitusohjelmia sekä tarkastella harjoituksiin liittyvää kehitystä. Lisäksi käyttäjä voi ottaa käyttöön muiden käyttäjien harjoituksia tai harjoitusohjelmia sekä tarkastella ja kommentoida niitä.
 
-## Sovelluksen kuvaus
+## Sovelluksen käyttäminen
 
-### Sovelluksen toiminnot
+### Tunnuksen luominen ja sisään kirjautuminen
 
-Sovelluksen perustoiminnot ovat seuraavat:
+Uusi käyttäjä voi luoda järjestelmään henkilökohtaisen käyttäjätilin **Rekisteröidy**-sivulla syöttämällä uniikin käyttäjänimen sekä salasanan. Rekisteröitymisen yhteydessä salasana tiivistetään turvallisesti tietokantaan ennen tallennusta.
 
-* Käyttäjä pystyy luomaan tunnuksen ja kirjautumaan sisään sovellukseen.
-* Käyttäjä pystyy lisäämään sovellukseen harjoituskertoja sekä harjoituskerroista koostuvia suunnitelmallisia harjoitusohjelmia.
-* Käyttäjä pystyy muokkaamaan ja poistamaan käytössään olevia harjoituskertoja tai -ohjelmia.
-* Käyttäjä voi tarkastella käytössään olevia harjoituksia sekä myös muiden harjoituksia.
-* Jokaisella harjoituksella on luoja, joka on harjoituksen lisännyt käyttäjä. Käyttäjä voi tarkastella muiden käyttäjien luomia (ja mahdollisesti käyttöön ottamia) harjoituksia.
-* Käyttäjä pystyy etsimään harjoituksia hakusanalla, henkilön tai käyttäjän nimellä sekä harjoitusryhmän perusteella (sekä mahdollisesti myös muilla perusteilla).
-* Sovelluksessa on käyttäjäsivut, jotka näyttävät käyttäjä- sekä harjoituskohtaisia tietoja ja tilastoja.
-* Käyttäjä voi luokitella lisäämänsä harjoitukset erilaisiin ryhmiin, jotka määritetään tietokannassa. Käyttäjä voi valita jokaisen luokittelun kohdalla yhden tai useamman vaihtoehdon.
-* Käyttäjä pystyy lisäämään kommentteja ja muistiinpanoja (toissijainen tietokohde) sekä omiin että muiden käyttäjien harjoituskertoihin ja -ohjelmiin.
+Rekisteröitymisen jälkeen sovellukseen kirjaudutaan sisään **Kirjaudu**-sivulla omilla tunnuksilla. Sisäänkirjautumisesta luodaan turvallinen käyttäjäistunto (`session`), joka pitää käyttäjän kirjautuneena ja mahdollistaa omien treenitietojen hallinnan. Sovelluksesta voi kirjautua ulos milloin tahansa sivupalkin tai ylävalikon **Kirjaudu ulos** -painikkeesta.
 
-Tiivistetysti sovellus toimii siten, että käyttäjä voi lisätä tililleen treenejä, jotka koostuvat yksittäisistä harjoituksista (liikkeistä). Treenit ja harjoitukset jaetaan pohjiin ja varsinaisiin toteutuksiin, joista jälkimmäiset toimivat periaatteessa suoritusten lokitietoina. Pohjat ovat sovelluksessa jaettavia, muokattavia ja poistettavia tietokohteita, kun taas toteutuneita treeni- tai harjoitustietoja ei voi jakaa tai muokata.
+Sovellukseen on myös ladattavissa valmista testidataa alustusskriptin avulla, jolloin voit kirjautua sisään valmiilla testitunnuksilla.
 
-Nykytoteutuksessa sovelluksella pystyy
+### Treeni- ja harjoituspohjien hallinnointi
 
-* luomaan tunnuksen ja kirjautumaan sisään sovellukseen
-* lisäämään omia harjoituspohjia sekä ottamaan käyttöön muiden käyttäjien harjoituspohjia
-* tarkastelemaan harjoituspohjia (omia ja käyttöön otettuja) sekä harjoituksia
-* muokkaamaan ja poistamaan omia harjoituspohjia sekä poistamaan käyttöön otettuja harjoituspohjia
-* etsimään muiden käyttäjien lisäämiä harjoituspohjia harjoituksen nimellä
+Sovelluksessa treenien rakenne pohjautuu uudelleenkäytettäviin treenipohjiin (*workout template*) ja harjoituspohjiin (*exercise template*). Voit hallinnoida niitä seuraavasti:
 
-Nykyinen toteutus sisältää kaksi merkittävää puutetta sovelluksen käyttöön liittyen. Molempien korjaaminen edellyttää hienovaraisempaa suunnittelua tietokannan rakennetta koskien, joten olen päättänyt siirtää niiden lopulliset toteutukset myöhempään vaiheeseen.[^1] Ensinnäkin käyttäjällä on mahdollisuus muokata vain omia harjoituspohjiaan. Toiseksi pohjan muokkaus tai poisto vaikuttaa muiden käyttäjien tietohin, joilla on harjoituspohja käytössä. Toisin sanoen jos luoja muokkaa pohjaa tai poistaa sen, muutetut tiedot näkyvät muilla käyttäjillä tai poistuvat heidän kannastaan. Molemmat rajoitteet perustuvat siihen, että en ole vielä tarkalleen oivaltanut tehokasta keinoa erottaa käyttäjän omia ja käyttöön otettuja harjoituspohjia kopiomatta rivejä tietokannassa. Kuten arvata saattaa, tietojen kopionti johtaisi epätoivottuun tilanteeseen, kun tuhat eri käyttäjää lisää tililleen yhden käyttäjän pohjan: tietokannassa olisi vähintään 1001 lähes identtistä riviä.
+1. **Uuden treenipohjan luominen:**
+   * Luo uusi treenipohja syöttämällä sille nimi, kuvaus sekä valitsemalla siihen kuuluvat harjoitukset tavoitesarjoineen ja -toistoineen (esim. Kyykky 3 x 8).
+   * Harjoituksia voi lisätä treenipohjaan kaikista itse luoduista tai muiden luomista ja omalle tilille käyttöön otetuista harjoituspohjista.
+   * Voit liittää treeniin luokitusta helpottavia tägejä (esim. `Voima`, `Yläkeho`, `Koti`). Syötetyt tägit kytketään automaattisesti treenipohjaan.
 
-Harjoituspohjien poistot ja muokkaukset eivät vaikuta niihin perustuviin harjoituksiin, joita käyttäjä on lisännyt sovellukseen. Lisätyt harjoitukset ovat erillisiä kohteita tietokannassa eikä niiden tarkastelu riipu harjoituspohjasta.[^2] Siten jos käyttäjä esimerkiksi poistaa luodun pohjan tai muokkaa sitä, jolle hän on aikaisemmin lisännyt harjoituksen, hän voi poiston tai muokkauksen jälkeen edelleen tarkastella harjoitusta alun perin lisätyssä muodossa. Toisaalta harjoituksen lisääminen edellyttää, että sille on olemassa harjoituspohja.[^3]
+2. **Muiden käyttäjien treenipohjien selaaminen ja haku:**
+   * Voit selata kaikkia järjestelmään luotuja julkisia treenipohjia sekä ryhmitellä niitä tägien perusteella klikkaamalla mitä tahansa tägilinkkiä.
+   * Tällä hetkellä muiden käyttäjien treenipohjia voi ottaa käyttöön omalle treenilistalle hakusivun kautta nimellä hakemalla (käyttöönotto tägisuodatuksen kautta ei ole vielä tuettu).
 
-### Sovelluksen käyttäminen
+3. **Muokkaaminen ja poistaminen:**
+   * Voit muokata ja päivittää itse luomiasi treenipohjia sekä niiden harjoituksia ja tägejä milloin tahansa.
+   * Voit poistaa itse luomasi treenipohjan järjestelmästä tai poistaa toisen käyttäjän luoman pohjan omalta omien treenien listaltasi.
+   * **Huom.** Tällä hetkellä treeni- tai harjoituspohjan muokkaaminen tai poistaminen luojan toimesta vaikuttaa suoraan myös kaikkien niiden käyttäjien näkymiin, jotka ovat ottaneet kyseisen pohjan käyttöön. Tämä on väliaikainen toteutustapa.
 
-Sovelluksen käyttäminen vaatii sisäänkirjautumista. Jos käytät sovellusta testidatalla, tietokannassa on kolme testikäyttäjää valmiiksi lisättynä (ks. ohjeet alla sovelluksen asennukseen liittyen). Kirjautuneena käyttäjänä voit tarkastella harjoituksia `Harjoitukset`-linkin kautta. Linkki johtaa sivulle, jossa yllä kuvatut toiminnot ovat toteteutettavissa. Sovellus ei vielä tue vastaavia (tai muitakaan) toimintoja `Treenit`-sivustolla. Niihin liittyvät sivut ovat pahasti keskeneräisiä ja niille siirtyminen voi jopa johtaa palvelimen kaatumiseen.
+4. **Treenin luominen treenipohjasta:**
+   * Voit aloittaa uuden treenisuorituksen suoraan treenipohjaan liitetyn **Tee treeni** -painikkeen kautta (löytyy sekä itse luoduista että käyttöön otetuista treenipohjista).
+   * Sovellus luo pohjan perusteella valmiin runko-osion, johon voit kirjata todelliset suoritetut sarjat, toistot ja käytetyt painot treenin.
+   * Valmiin treenin tallentaminen luo järjestelmään pysyvän **treenilokin** (*workout log*), jota ei enää muuteta, vaikka alkuperäistä treenipohjaa muokattaisiin myöhemmin.
+
+### Käyttäjäsivut
+
+Jokaisella rekisteröityneellä käyttäjällä on oma käyttäjäprofiilisivu, joka toimii tilastojen ja omien sisältöjen keskuksena. Käyttäjäsivulta näkee yhdellä silmäyksellä yhteenvedon käyttäjän aktiivisuudesta sekä linkit kaikkiin hänen luomiinsa tai käyttöön ottamiinsa kokonaisuuksiin.
+
+Profiilisivulta löytyvät seuraavat tiedot ja osiot:
+
+1. **Aktiivisuus- ja tilastoyhteenveto:**
+   * Näyttää luotujen sekä käyttöön otettujen treeni- ja liikepohjien määrät.
+   * Näyttää suoritettujen treenien ja yksittäisten toteutuneiden liikkeiden kokonaismäärät.
+
+2. **Omat treenipohjat:**
+   * Lista käyttäjän omista ja käyttöön ottamista treenipohjista. Jos pohjia ei vielä ole lisätty, osio ilmoittaa tästä selkeästi.
+
+3. **Suoritetut treenit:**
+   * Aikajärjestyksessä oleva lista suoritetuista treeneistä. Jokaisesta treenistä näytetään sen nimi, liikkeiden ja suoritettujen sarjojen kokonaismäärät sekä tarkka suoritusajankohta.
+
+4. **Liikepohjat harjoitusryhmittäin:**
+   * Käyttäjän luomat liikepohjat on ryhmitelty lihasryhmän/kategorian mukaan (esim. *Rinta*, *Selkä*).
+   * Kategoriakohtaisesti näytetään luotujen liikepohjien määrä sekä se, kuinka moneen treenipohjaan kyseisen kategorian liikkeitä on liitetty.
+
+### Kommentointi
+
+Sovelluksessa käyttäjät voivat viestiä keskenään ja antaa palautetta treeni- ja harjoituspohjista. Treeni- tai harjoituspohjan sivulla näkyvät kaikki siihen liitetyt kommentit aikajärjestyksessä.
 
 ## Sovelluksen asennus ja käynnistäminen
 
@@ -88,9 +111,3 @@ flask run
 ```
 
 Sovellus käynnistyy osoitteessa http://localhost:5000.
-
----
-
-[^1]: Tietokannan rakenne tulee joka tapauksessa muuttumaan projektin aikana, joten nykytoteutus on muutenkin vain väliaikainen.
-[^2]: Harjoitus viittaa vierasavaimella harjoituspohjaan, joka on `NULLABLE`. Vierasavain saa arvon `NULL`, jos harjoitukseen liitetty pohja poistetaan taulusta.  
-[^3]: Sovelluksen nykyinen tila ei mahdollista harjoitusten lisäämistä ja vaatimus pohjan olemassaolosta toteutetaan todennäköisesti sovellustasolla. Tietokanta mahdollistaa harjoitusten lisäämisen ilman pohjaa, koska vierasavain on `NULLABLE`.

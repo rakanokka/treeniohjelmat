@@ -12,7 +12,8 @@
 <div class="page-container">
 	<h2>Luo harjoituspohja</h2>
 	<br>
-	<form action="{{ url_for('exercise_templates') }}" method="POST" class="form-stacked">
+	<form action="" method="POST" class="form-stacked">
+		<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
         <label for="name">Harjoituksen nimi:</label>
         <input type="text" id="name" name="name" required>
 		<label for="category">Liikeryhmä:</label>
@@ -42,6 +43,14 @@
 			<div class="item-extra">
 				<span>{{ et.exercise_count }} harjoitusta</span>
 				<span>{{ et.user_count }} käyttäjää</span>
+				<span>
+					<form action="" method="POST" class="form-stacked">
+						<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
+						<input type="hidden" name="template_id" value="{{ et.id }}">	
+						<input type="hidden" name="is_delete_owner_template" value="true">
+						<button type="submit" class="btn">Poista</button>	
+					</form>
+				</span>
 				<span>
 					<a href="{{ url_for('view_exercise_template', template_id = et.id) }}">
 						<button class="btn" type="submit">Tarkastele</button>
@@ -74,6 +83,14 @@
 			<div class="item-extra">
 				<span>{{ et.exercise_count }} harjoitusta</span>
 				<span>{{ et.user_count }} käyttäjää</span>
+				<span>
+					<form action="" method="POST" class="form-stacked">
+						<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
+						<input type="hidden" name="template_id" value="{{ et.id }}">	
+						<input type="hidden" name="is_delete_adopted_template" value="true">
+						<button type="submit" class="btn">Poista käytöstä</button>	
+					</form>
+				</span>
 				<span>
 					<a href="{{ url_for('view_exercise_template', template_id = et.id) }}">
 						<button class="btn" type="submit">Tarkastele</button>

@@ -11,6 +11,8 @@
     </ul>
 </div>
 <div class="page-container">
+	<h2>Treeni: {{ name }}</h2>
+	<br>
 	<h2>Harjoituspohjat</h2>
 	<div class="list-container">
 	{% for et in templates %}	
@@ -27,6 +29,7 @@
 			</div>
 			<div class="item-extra">
 				<form action="" method="POST">
+					<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
 					<input type="hidden" name="exercise_template_id" value="{{ et.id }}">	
 					<button type="submit" class="btn">Lisää</button>
 				</form>

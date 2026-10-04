@@ -28,9 +28,6 @@
 		{% if exercise.notes %}
 		<li>Huomiot: {{ exercise.notes }}</li>
 		{% endif %}
-	<ul>
-	<form action="{{ url_for('view_exercise', exercise_id = exercise.id) }}" method="POST" class="form-stacked">
-        <button type="submit" class="btn">Poista</button>	
-    </form>
+	<ul>	
 </div>
 {% endblock %}

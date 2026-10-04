@@ -102,7 +102,7 @@ CREATE TABLE exercise_set (
     exercise_id INTEGER NOT NULL,
     order_index INTEGER NOT NULL DEFAULT 0 CHECK(order_index >= 0),
     reps INTEGER NOT NULL CHECK(reps >= 0),
-    weight REAL NOT NULL CHECK(weight >= 0),
+    weight REAL NOT NULL,
     FOREIGN KEY (exercise_id) REFERENCES exercise_log(id) ON DELETE CASCADE
 );
 
