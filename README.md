@@ -8,7 +8,7 @@ XFit on kuntoilijoille suunnattu sovellus, jossa käyttäjät voivat luoda ja ja
 
 Uusi käyttäjä voi luoda järjestelmään henkilökohtaisen käyttäjätilin **Rekisteröidy**-sivulla syöttämällä uniikin käyttäjänimen sekä salasanan. Rekisteröitymisen yhteydessä salasana tiivistetään turvallisesti tietokantaan ennen tallennusta.
 
-Rekisteröitymisen jälkeen sovellukseen kirjaudutaan sisään **Kirjaudu**-sivulla omilla tunnuksilla. Sisäänkirjautumisesta luodaan turvallinen käyttäjäistunto (`session`), joka pitää käyttäjän kirjautuneena ja mahdollistaa omien treenitietojen hallinnan. Sovelluksesta voi kirjautua ulos milloin tahansa sivupalkin tai ylävalikon **Kirjaudu ulos** -painikkeesta.
+Rekisteröitymisen jälkeen sovellukseen kirjaudutaan sisään **Kirjaudu**-sivulla omilla tunnuksilla. Sisäänkirjautumisesta luodaan turvallinen käyttäjäistunto (`session`), joka pitää käyttäjän kirjautuneena ja mahdollistaa omien treenitietojen hallinnan. Sovelluksesta voi kirjautua ulos milloin tahansa ylävalikon **Kirjaudu ulos** -painikkeesta.
 
 Sovellukseen on myös ladattavissa valmista testidataa alustusskriptin avulla, jolloin voit kirjautua sisään valmiilla testitunnuksilla.
 
@@ -17,13 +17,13 @@ Sovellukseen on myös ladattavissa valmista testidataa alustusskriptin avulla, j
 Sovelluksessa treenien rakenne pohjautuu uudelleenkäytettäviin treenipohjiin (*workout template*) ja harjoituspohjiin (*exercise template*). Voit hallinnoida niitä seuraavasti:
 
 1. **Uuden treenipohjan luominen:**
-   * Luo uusi treenipohja syöttämällä sille nimi, kuvaus sekä valitsemalla siihen kuuluvat harjoitukset tavoitesarjoineen ja -toistoineen (esim. Kyykky 3 x 8).
-   * Harjoituksia voi lisätä treenipohjaan kaikista itse luoduista tai muiden luomista ja omalle tilille käyttöön otetuista harjoituspohjista.
+   * Luo uusi treenipohja syöttämällä sille nimi sekä mahdolliset kuvaus- ja luokitustiedot. 
+   * Treenipohja sisältää yhden tai useamman harjoituksen tavoitesarjoineen ja -toistoineen (esim. Kyykky 3 x 8), jotka tulee lisätä erikseen.[1^] Harjoituksia voi lisätä treenipohjaan kaikista itse luoduista tai muiden luomista ja omalle tilille käyttöön otetuista harjoituspohjista.
    * Voit liittää treeniin luokitusta helpottavia tägejä (esim. `Voima`, `Yläkeho`, `Koti`). Syötetyt tägit kytketään automaattisesti treenipohjaan.
 
 2. **Muiden käyttäjien treenipohjien selaaminen ja haku:**
    * Voit selata kaikkia järjestelmään luotuja julkisia treenipohjia sekä ryhmitellä niitä tägien perusteella klikkaamalla mitä tahansa tägilinkkiä.
-   * Tällä hetkellä muiden käyttäjien treenipohjia voi ottaa käyttöön omalle treenilistalle hakusivun kautta nimellä hakemalla (käyttöönotto tägisuodatuksen kautta ei ole vielä tuettu).
+   * Tällä hetkellä muiden käyttäjien treenipohjia voi ottaa käyttöön omalle treenilistalle hakusivun kautta nimellä hakemalla (käyttöönotto tägisuodatuksen kautta ei ole vielä mahdollista).
 
 3. **Muokkaaminen ja poistaminen:**
    * Voit muokata ja päivittää itse luomiasi treenipohjia sekä niiden harjoituksia ja tägejä milloin tahansa.
@@ -32,14 +32,12 @@ Sovelluksessa treenien rakenne pohjautuu uudelleenkäytettäviin treenipohjiin (
 
 4. **Treenin luominen treenipohjasta:**
    * Voit aloittaa uuden treenisuorituksen suoraan treenipohjaan liitetyn **Tee treeni** -painikkeen kautta (löytyy sekä itse luoduista että käyttöön otetuista treenipohjista).
-   * Sovellus luo pohjan perusteella valmiin runko-osion, johon voit kirjata todelliset suoritetut sarjat, toistot ja käytetyt painot treenin.
+   * Sovellus luo pohjan perusteella treenille valmiin rungon, johon voit kirjata todelliset suoritetut sarjat, toistot ja käytetyt painot.
    * Valmiin treenin tallentaminen luo järjestelmään pysyvän treenilokin (*workout log*), jota ei enää muuteta, vaikka alkuperäistä treenipohjaa muokattaisiin myöhemmin.
 
 ### Käyttäjäsivut
 
-Jokaisella rekisteröityneellä käyttäjällä on oma käyttäjäprofiilisivu, joka toimii tilastojen ja omien sisältöjen keskuksena. Käyttäjäsivulta näkee yhdellä silmäyksellä yhteenvedon käyttäjän aktiivisuudesta sekä linkit kaikkiin hänen luomiinsa tai käyttöön ottamiinsa kokonaisuuksiin.
-
-Profiilisivulta löytyvät seuraavat tiedot ja osiot:
+Jokaisella rekisteröityneellä käyttäjällä on oma käyttäjäprofiilisivu. Käyttäjäsivulta näkee yhdellä silmäyksellä yhteenvedon käyttäjän aktiivisuudesta.
 
 1. **Aktiivisuus- ja tilastoyhteenveto:**
    * Näyttää luotujen sekä käyttöön otettujen treeni- ja liikepohjien määrät.
@@ -52,7 +50,7 @@ Profiilisivulta löytyvät seuraavat tiedot ja osiot:
    * Aikajärjestyksessä oleva lista suoritetuista treeneistä. Jokaisesta treenistä näytetään sen nimi, liikkeiden ja suoritettujen sarjojen kokonaismäärät sekä tarkka suoritusajankohta.
 
 4. **Liikepohjat harjoitusryhmittäin:**
-   * Käyttäjän luomat liikepohjat on ryhmitelty lihasryhmän/kategorian mukaan (esim. *Rinta*, *Selkä*).
+   * Käyttäjän luomat liikepohjat on ryhmitelty esimerkiksi lihasryhmän tai muun kategorian mukaan (esim. *Rinta*, *Selkä*).
    * Kategoriakohtaisesti näytetään luotujen liikepohjien määrä sekä se, kuinka moneen treenipohjaan kyseisen kategorian liikkeitä on liitetty.
 
 ### Kommentointi
@@ -111,3 +109,7 @@ flask run
 ```
 
 Sovellus käynnistyy osoitteessa http://localhost:5000.
+
+---
+
+[1^]: Nykytotetutuksessa voit tosin lisätä treenilistalle tyhjiä treenipohjia, joilla ei ole harjoituksia.
