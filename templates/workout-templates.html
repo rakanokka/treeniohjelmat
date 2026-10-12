@@ -10,18 +10,8 @@
     </ul>
 </div>
 <div class="page-container">
-	<h2>Luo treenipohja</h2>
 	<br>
-	<form action="" method="POST">
-		<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
-        <label for="name">Treenin nimi:</label>
-        <input type="text" id="name" name="name" required>
-		<label for="name">Treenin kuvaus:</label>
-        <input type="text" id="desc" name="desc">
-        <label for="name">Treenin luokat:</label>
-        <input style="width: 300px" type="text" id="tags" name="tags" placeholder="Syötä pilkulla erotettuna listana...">
-		<button type="submit" class="btn">Luo</button>
-    </form>
+	<a href="{{ url_for('create_workout_template') }}">Luo uusi treenipohja</a>
 	<br>
 	<h2>Luodut pohjat</h2>
 	{% if my_templates %}
@@ -55,31 +45,36 @@
 				<span>{{ wt.exercise_count }} harjoitusta</span>
 				<span>{{ wt.user_count }} käyttäjää</span>
 				<span>
-					<a href="{{ url_for('add_workout_exercises', template_id = wt.id) }}">
-						<button class="btn" type="submit">Lisää harjoitus</button>
-					</a>	
-				</span>
-				<span>
 					<form action="" method="POST" class="form-stacked">
 						<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
-						<input type="hidden" name="is_do_workout" value="true">
-						<input type="hidden" name="template_id" value="{{ wt.id }}">	
-						<input type="hidden" name="template_name" value="{{ wt.name }}">	
-						<input type="hidden" name="template_desc" value="{{ wt.description or "" }}">	
+						<input type="hidden" name="wt_commit" value="true">
+						<input type="hidden" name="wt_id" value="{{ wt.id }}">	
+						<input type="hidden" name="wt_name" value="{{ wt.name }}">	
+						<input type="hidden" name="wt_desc" value="{{ wt.description or "" }}">	
 						<button type="submit" class="btn">Tee treeni</button>	
 					</form>
 				</span>
 				<span>
 					<form action="" method="POST" class="form-stacked">
 						<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
-						<input type="hidden" name="template_id" value="{{ wt.id }}">	
-						<input type="hidden" name="is_delete_owner_template" value="true">
+						<input type="hidden" name="wt_id" value="{{ wt.id }}">	
+						<input type="hidden" name="wt_delete_owner" value="true">
 						<button type="submit" class="btn">Poista</button>	
 					</form>
 				</span>
+				{% if wt.is_root == 0 %}
 				<span>
-					<a href="{{ url_for('view_workout_template', template_id = wt.id) }}">
-						<button class="btn" type="submit">Tarkastele</button>
+					<form action="" method="POST" class="form-stacked">
+						<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
+						<input type="hidden" name="wt_id" value="{{ wt.id }}">	
+						<input type="hidden" name="wt_pop_owner" value="true">
+						<button type="submit" class="btn">Palaa edelliseen</button>	
+					</form>
+				</span>	
+				{% endif %}
+				<span>
+					<a href="{{ url_for('edit_workout_template', wt_id = wt.id) }}">
+						<button class="btn" type="submit">Muokkaa</button>
 					</a>	
 				</span>
 			</div>
@@ -125,26 +120,47 @@
 				<span>
 					<form action="" method="POST" class="form-stacked">
 						<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
-						<input type="hidden" name="is_do_workout" value="true">
-						<input type="hidden" name="template_id" value="{{ wt.id }}">	
-						<input type="hidden" name="template_name" value="{{ wt.name }}">	
-						<input type="hidden" name="template_desc" value="{{ wt.description or "" }}">	
+						<input type="hidden" name="wt_commit" value="true">
+						<input type="hidden" name="wt_id" value="{{ wt.id }}">	
+						<input type="hidden" name="wt_name" value="{{ wt.name }}">	
+						<input type="hidden" name="wt_desc" value="{{ wt.description or "" }}">	
 						<button type="submit" class="btn">Tee treeni</button>	
 					</form>
 				</span>
 				<span>
 					<form action="" method="POST" class="form-stacked">
 						<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
-						<input type="hidden" name="template_id" value="{{ wt.id }}">	
-						<input type="hidden" name="is_delete_adopted_template" value="true">
-						<button type="submit" class="btn">Poista käytöstä</button>	
+						<input type="hidden" name="wt_id" value="{{ wt.id }}">	
+						<input type="hidden" name="wt_delete_adopted" value="true">
+						<button type="submit" class="btn">Poista</button>	
 					</form>
 				</span>
+				{% if wt.has_next_version == 1 %}
 				<span>
+					<form action="" method="POST">
+						<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
+						<input type="hidden" name="wt_id" value="{{ wt.id }}">
+						<input type="hidden" name="wt_next_adopted" value="true">
+						<label>Uudempi versio löytyy</label>
+						<button class="btn" type="submit">Päivitä seuraavaan</button>
+					</form>
+				</span>
+				{% endif %}
+				{% if wt.is_root == 0 %}
+				<span>
+					<form action="" method="POST" class="form-stacked">
+						<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
+						<input type="hidden" name="wt_id" value="{{ wt.id }}">	
+						<input type="hidden" name="wt_pop_adopted" value="true">
+						<button type="submit" class="btn">Palaa edelliseen</button>	
+					</form>
+				</span>	
+				{% endif %}
+				{#<span>
 					<a href="{{ url_for('view_workout_template', template_id = wt.id) }}">
 						<button class="btn" type="submit">Tarkastele</button>
 					</a>	
-				</span>
+				</span>#}
 			</div>
 		</div>
 	{% endfor %}

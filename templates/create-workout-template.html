@@ -1,0 +1,103 @@
+{% extends "layout.html" %}
+
+{% block title %}Treenit &ndash; XFit{% endblock %}
+
+{% block content %}
+<div class="page-nav exercises-nav">
+	<ul class="no-bullets">
+		<li><a href="{{ url_for('workouts') }}">Treenit</a></li>
+		<li><a href="{{ url_for('workout_templates') }}">Treenipohjat</a></li>
+		<li><a href="{{ url_for('workouts_search') }}">Etsi treenipohjia</a></li>
+    </ul>
+</div>
+<div class="page-container">
+	<br>
+	<form action="" method="POST" class="form-stacked">
+		<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
+        <label for="name">Treenin nimi:</label>
+		<input 
+			type="text" 
+			id="name" 
+			name="name" 
+			value="{{ session.wtc.name }}" 
+			required>
+		<label for="name">Treenin kuvaus:</label>
+		<input 
+			type="text" 
+			id="desc" 
+			name="desc" 
+			value="{{ session.wtc.description }}">
+		<label for="name">Treenin luokat:</label>
+        <input 
+			style="width: 300px" 
+			type="text" 
+			id="tags" 
+			name="tags" 
+			value="{{ session.wtc.tags | join(',') }}"
+			placeholder="Syötä pilkulla erotettuna listana...">
+		<br>	
+		<br>	
+		<h2>Harjoitukset</h2>
+		{% if session.wtc.exercises %}	
+		<div class="list-container">
+		{% for et in session.wtc.exercises %}	
+			<div class="list-item exercise-item">
+				<p class="bold-text">{{ et.name }}</p>
+				<p>{{ et.category }}</p>
+				<div class="item-info-entry">
+					<p class="key">Sarjat:</p>	
+					<p class="value">{{ et.sets }}</p>	
+				</div>
+				<div class="item-info-entry">
+					<p class="key">Toistot:</p>	
+					<p class="value">{{ et.reps }}</p>	
+				</div>
+			</div>
+		{% endfor %}
+		</div>
+		{% else %}
+		<p>Ei lisättyjä harjoituksia.</p> 
+		<br>
+		{% endif %}
+		<br>
+		<input type="hidden" name="wt_submit" value="true">
+		<button type="submit" class="btn">Luo</button>
+	</form>
+	<br>
+	<h2>Harjoituspohjat</h2>
+	<div class="list-container">
+	{% for et in session.wtc.my_templates %}	
+		<div class="list-item exercise-item">
+			<p class="bold-text">{{ et.name }}</p>
+			<p>{{ et.category }}</p>
+			<div class="item-info-entry">
+				<p class="key">Sarjat:</p>	
+				<p class="value">{{ et.sets }}</p>	
+			</div>
+			<div class="item-info-entry">
+				<p class="key">Toistot:</p>	
+				<p class="value">{{ et.reps }}</p>	
+			</div>
+			<div class="item-extra">
+				<span>
+					<form action="" method="POST">
+						<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
+						<input type="hidden" name="et_add" value="true">	
+						<input type="hidden" name="et_id" value="{{ et.id }}">	
+						<button type="submit" class="btn">Lisää pohjaan</button>
+					</form>
+				</span>
+				<span>
+					<form action="" method="POST">
+						<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
+						<input type="hidden" name="et_remove" value="true">	
+						<input type="hidden" name="et_id" value="{{ et.id }}">	
+						<button type="submit" class="btn">Poista pohjasta</button>
+					</form>
+				</span>
+			</div>
+		</div>
+	{% endfor %}
+	</div>
+</div>
+{% endblock %}

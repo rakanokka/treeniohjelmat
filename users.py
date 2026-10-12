@@ -7,7 +7,7 @@ def add_user(username: str, email: str, password: str) -> bool:
         sql = 'INSERT INTO "user" (username, email, password_hash) VALUES (?, ?, ?)'
         database.execute(sql, [username.strip(), email.strip(), pw_hash])
     except Exception as e:
-        print(e)
+        print(str(e))
         return False
     return True
 
@@ -16,14 +16,14 @@ def get_user(user_id: int) -> dict | None:
     r = database.query(sql, [user_id])
     return r[0] if r else None
 
-def get_auth_user_id(username: str, password: str) -> int:
+def get_auth_user_id(username: str, password: str) -> int | None:
     sql = 'SELECT id, password_hash FROM "user" WHERE username = ?'
     r = database.query(sql, [username.strip()])
     if r:
         pw_hash = r[0]["password_hash"]
         if check_password_hash(pw_hash, password.strip()):
             return int(r[0]["id"])
-    return -1
+    return None
 
 def get_other_users(user_id: int) -> list[dict]:
     sql = 'SELECT id, username FROM "user" WHERE id <> ?'

@@ -33,6 +33,8 @@ CREATE TABLE workout_template (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
 	creator_id INTEGER NOT NULL,
     workout_plan_id INTEGER, -- NULL if not part of a workout plan
+	root_id INTEGER,
+	next_version_id INTEGER,
     name TEXT NOT NULL CHECK(trim(name) != ''),
 	description TEXT,
 	created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -63,11 +65,15 @@ CREATE TABLE workout_log (
 CREATE TABLE exercise_template (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
 	creator_id INTEGER NOT NULL,
+	root_id INTEGER,
+	next_version_id INTEGER,
     name TEXT NOT NULL CHECK(trim(name) != ''),
 	category TEXT,
     target_sets INTEGER NOT NULL CHECK(target_sets >= 0),
     target_reps INTEGER NOT NULL CHECK(target_reps >= 0),
-	FOREIGN KEY (creator_id) REFERENCES "user"(id) ON DELETE CASCADE
+	FOREIGN KEY (creator_id) REFERENCES "user"(id) ON DELETE CASCADE,
+	FOREIGN KEY (root_id) REFERENCES exercise_template(id) ON DELETE CASCADE,
+	FOREIGN KEY (next_version_id) REFERENCES exercise_template(id) ON DELETE SET NULL	
 );
 
 CREATE TABLE workout_exercise_template (

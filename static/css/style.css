@@ -59,7 +59,7 @@ footer {
 
 .btn {
 	min-width: 7rem;
-	padding: 3px 0;
+	padding: 3px;
 	font-weight: 700;
 	
 	.btn-primary {

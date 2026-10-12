@@ -2,37 +2,70 @@ import sqlite3
 import config
 from flask import g
 
-def get_connection() -> sqlite3.Connection:
-    connection = sqlite3.connect(config.DATABASE_FILENAME)
-    connection.execute("PRAGMA foreign_keys = ON")
-    connection.row_factory = sqlite3.Row
-    return connection
+def get_connection() -> sqlite3.Connection | None:
+    try:
+        connection = sqlite3.connect(config.DATABASE_FILENAME)
+        connection.execute("PRAGMA foreign_keys = ON")
+        connection.row_factory = sqlite3.Row
+        return connection
+    except Exception as e:
+        print(str(e)) 
+    return None
 
 def query_with(connection: sqlite3.Connection, sql: str, params = []) -> list[dict]:
-    result = connection.execute(sql, params).fetchall()
-    return result
+    try:
+        return connection.execute(sql, params).fetchall()
+    except Exception as e:
+        print(str(e)) 
+    return []
 
 def query(sql: str, params = []) -> list[dict]:
     connection = get_connection()
-    result = connection.execute(sql, params).fetchall()
-    connection.close()
+    result = []
+    if connection:
+        try:
+            result = connection.execute(sql, params).fetchall()
+        except Exception as e:
+            print(str(e)) 
+        finally:
+            connection.close()
     return result
 
-def execute_with(connection: sqlite3.Connection, sql: str, params = []) -> int:
-    c = connection.execute(sql, params)
-    connection.commit()
-    return c.lastrowid or -1
+def execute_insert_with(connection: sqlite3.Connection, sql: str, params = []) -> int:
+    result = -1
+    try:
+        c = connection.execute(sql, params)
+        connection.commit()
+        result = c.lastrowid
+    except Exception as e:
+        print(str(e))
+    return result or -2
 
-def execute(sql: str, params = []):
+def execute_updel_with(connection: sqlite3.Connection, sql: str, params = []) -> int:
+    result = -1
+    try:
+        c = connection.execute(sql, params)
+        connection.commit()
+        result = c.rowcount
+    except Exception as e:
+        print(str(e))
+    return result
+
+def execute(sql: str, params = []) -> bool:
     connection = get_connection()
-    c = connection.execute(sql, params)
-    connection.commit()
-    g.insert_id = c.lastrowid
-    g.row_count = c.rowcount
-    connection.close()
-
-def insert_id() -> int:
-    return g.insert_id or -1
+    if connection:
+        try:
+            c = connection.execute(sql, params)
+            connection.commit()
+            g.insert_id = c.lastrowid
+            g.row_count = c.rowcount
+            return True
+        except Exception as e:
+            print(str(e))
+        finally:
+            connection.close()
+    return False
 
 def row_count() -> int:
     return g.row_count
+

@@ -5,7 +5,7 @@ import utils
 import users as users_repo
 import exercises as exercises_repo
 import workouts as workouts_repo
-from typing import Any, cast
+from typing import Any
 from flask import Flask, abort, flash, render_template, request, redirect, url_for, session
 from pathlib import Path
 
@@ -22,9 +22,11 @@ DB_PATH = Path(config.DATABASE_FILENAME)
 if not DB_PATH.exists():
     assert False, f"Create database file at {DB_PATH}"
 
+BAD_REQUEST = 400
 UNAUTHORIZED = 401
 FORBIDDEN = 403
-URL_NOT_FOUND = 404
+PAGE_NOT_FOUND = 404
+INTERNAL_SERVER_ERROR = 500
 
 def check_csrf():
     if not("csrf_token" in request.form):
@@ -39,9 +41,9 @@ def home() -> str:
     username = session.get("username")
     user_id = session.get("user_id")
     users = []
-    authenticated = not(username is None)
+    authenticated = not(user_id is None)
     if authenticated:
-        users = users_repo.get_other_users(cast(int, user_id))
+        users = users_repo.get_other_users(int(user_id))
     return render_template("home.html",
                            authenticated = authenticated,
                            users = users,
@@ -70,7 +72,7 @@ def login() -> str | Any:
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "").strip()
         user_id = users_repo.get_auth_user_id(username, password) 
-        if user_id != -1: 
+        if user_id: 
             session["user_id"] = user_id
             session["username"] = username 
             session["csrf_token"] = secrets.token_hex(16) 
@@ -83,9 +85,7 @@ def login() -> str | Any:
 
 @app.route("/logout", methods = ["POST"])
 def logout() -> Any: 
-    if "user_id" in session:
-        del session["user_id"]
-        del session["username"]
+    session.clear()
     return redirect(url_for("home"))
 
 @app.route("/profile/<int:user_id>")
@@ -93,7 +93,7 @@ def profile(user_id: int) -> str | Any:
     get_auth_user()
     profile_info = users_repo.get_user_profile_info(user_id)
     if not profile_info:
-        abort(URL_NOT_FOUND)
+        abort(PAGE_NOT_FOUND)
     workout_templates = users_repo.get_workout_templates_usage_count(user_id)
     workouts = users_repo.get_recent_workouts(user_id)
     favourites = users_repo.get_favourite_exercise_categories(user_id)
@@ -115,7 +115,7 @@ def exercises() -> str:
     user_id = get_auth_user()
     if request.method == "POST":
         check_csrf()
-        exercise_id = cast(int, request.form.get("exercise_id"))
+        exercise_id = int(str(request.form.get("exercise_id")))
         exercises_repo.delete_exercise_log(user_id, exercise_id)
     e = exercises_repo.get_exercise_logs(user_id)
     return render_template("exercises.html", exercises = e)
@@ -125,7 +125,7 @@ def view_exercise(exercise_id: int) -> str | Any:
     user_id = get_auth_user()
     e = exercises_repo.get_exercise_log(exercise_id)
     if not e:
-        abort(URL_NOT_FOUND)
+        abort(PAGE_NOT_FOUND)
     workout_id = e["workout_id"]
     owner_id = workouts_repo.get_workout_log_user_id(workout_id)
     if user_id != owner_id:
@@ -140,12 +140,32 @@ def exercise_templates() -> str | Any:
     if request.method == "POST":
         check_csrf()
         if request.form.get("is_delete_owner_template") == "true":
-            et_id = cast(int, request.form["template_id"])
+            et_id = int(request.form["template_id"])
             exercises_repo.delete_my_exercise_template(user_id, et_id)
             return redirect(url_for("exercise_templates"))
+        if request.form.get("is_pop_owner_template") == "true":
+            et_id = int(request.form["template_id"])
+            exercises_repo.delete_my_exercise_template_latest_version(user_id, et_id)
+            return redirect(url_for("exercise_templates"))
         if request.form.get("is_delete_adopted_template") == "true":
-            et_id = cast(int, request.form["template_id"])
+            et_id = int(request.form["template_id"])
             exercises_repo.delete_adopted_exercise_template(user_id, et_id)
+            return redirect(url_for("exercise_templates"))
+        if request.form.get("is_pop_adopted_template") == "true":
+            et_id = int(request.form["template_id"])
+            prev_version_id = exercises_repo.get_exercise_template_previous_version_id(et_id)
+            if not prev_version_id:
+                print("prev_version_id does not exist")
+                abort(BAD_REQUEST)
+            exercises_repo.update_adopted_exercise_template(user_id, et_id, prev_version_id)
+            return redirect(url_for("exercise_templates"))
+        if request.form.get("is_update_adopted_template") == "true":
+            et_id = int(request.form["template_id"])
+            next_version_id = exercises_repo.get_exercise_template_next_version_id(et_id)
+            if not next_version_id:
+                print("next_version_id does not exist")
+                abort(BAD_REQUEST)
+            exercises_repo.update_adopted_exercise_template(user_id, et_id, next_version_id)
             return redirect(url_for("exercise_templates"))
         
         # Add template
@@ -175,6 +195,14 @@ def exercise_templates() -> str | Any:
 @app.route("/exercises/templates/<int:template_id>", methods = ["GET", "POST"])
 def view_exercise_template(template_id: int) -> str | Any:
     user_id = get_auth_user()
+    get_previous = request.args.get("get_previous")
+    is_latest_version = True
+    if get_previous == "true":
+        prev_template_id = exercises_repo.get_exercise_template_previous_version_id(template_id)
+        if not prev_template_id:
+            abort(BAD_REQUEST)
+        template_id = prev_template_id
+        is_latest_version = False
     if request.method == "POST":
         check_csrf()
         if request.form.get("is_comment") == "true":
@@ -193,23 +221,25 @@ def view_exercise_template(template_id: int) -> str | Any:
                 flash("[VIRHE] Sarjojen ja toistojen määrien on oltava positiivisia kokonaislukuja")
                 return redirect(url_for("view_exercise_template", template_id = template_id))
             exercises_repo.update_exercise_template(user_id, template_id, name, category, sv.get(), rv.get())
+            return redirect(url_for("exercise_templates"))
     
     template = exercises_repo.get_exercise_template(template_id)
     if not template:
-        abort(URL_NOT_FOUND)
+        abort(PAGE_NOT_FOUND)
     comments = exercises_repo.get_excercise_template_comments(template_id)
     creator_id = exercises_repo.get_exercise_template_creator_id(template_id)
     return render_template("exercise-template.html",
                            template = template,
                            comments = comments,
-                           has_edit_permission = creator_id == user_id)
+                           # Only the latest version can be modified
+                           editable = is_latest_version and creator_id == user_id)
 
 @app.route("/exercises/search", methods = ["GET", "POST"])
 def exercises_search() -> str | Any:
     user_id = get_auth_user()
     if request.method == "POST":
         check_csrf()
-        template_id = cast(int, request.form.get("template_id"))
+        template_id = int(str(request.form.get("template_id")))
         exercises_repo.add_adopted_exercise_template(user_id, template_id)
         return redirect(url_for("exercise_templates"))
     search_query = request.args.get("query", "").strip() 
@@ -230,7 +260,7 @@ def workouts() -> str:
     user_id = get_auth_user()
     if request.method == "POST":
         check_csrf()
-        workout_id = cast(int, request.form.get("workout_id"))
+        workout_id = int(str(request.form.get("workout_id")))
         workouts_repo.delete_workout_log(user_id, workout_id) 
     w = workouts_repo.get_workout_logs(user_id)
     return render_template("workouts.html", workouts = w)
@@ -241,7 +271,7 @@ def view_workout(workout_id: int) -> str | Any:
     if request.method == "POST":
         check_csrf()
         if request.form.get("is_delete_exercise") == "true":
-            exercise_id = cast(int, request.form.get("exercise_id"))
+            exercise_id = int(str(request.form.get("exercise_id")))
             workouts_repo.remove_exercise_from_workout_log(workout_id, exercise_id) 
         else:
             # Add exercise
@@ -264,12 +294,12 @@ def view_workout(workout_id: int) -> str | Any:
                 flash("[VIRHE] Toistojen ja painojen määrien on täsmättävä sarjojen määrän kanssa")
                 return redirect(url_for("view_workout", workout_id = workout_id))
             name = str(request.form.get("wet_name"))
-            wet_id = cast(int, request.form.get("wet_id"))
+            wet_id = int(str(request.form.get("wet_id")))
             workouts_repo.add_exercise_to_workout_log(workout_id, wet_id, name, reps_lst, weights_lst)
 
     workout = workouts_repo.get_workout_log(workout_id)
     if not workout:
-        abort(URL_NOT_FOUND)
+        abort(PAGE_NOT_FOUND)
     owner_id = workouts_repo.get_workout_log_user_id(workout_id)
     if user_id != owner_id:
         # For now, users have no access to the workout logs of other users. 
@@ -288,35 +318,20 @@ def workout_templates() -> str | Any:
     user_id = get_auth_user()
     if request.method == "POST":
         check_csrf()
-        if request.form.get("is_do_workout") == "true":
-            wt_id = cast(int, request.form["template_id"])
-            wt_name = request.form["template_name"]
-            wt_desc = request.form["template_desc"]
-            workouts_repo.add_workout_log(user_id, wt_id, wt_name, wt_desc) 
+        if request.form.get("wt_commit") == "true":
+            wt_id = int(request.form["wt_id"])
+            wt_name = request.form["wt_name"]
+            wt_desc = request.form["wt_desc"]
+            #workouts_repo.add_workout_log(user_id, wt_id, wt_name, wt_desc) 
             return redirect(url_for("workouts"))
-        if request.form.get("is_delete_owner_template") == "true":
-            wt_id = cast(int, request.form["template_id"])
+        if request.form.get("wt_delete_owner") == "true":
+            wt_id = int(request.form["wt_id"])
             workouts_repo.delete_my_workout_template(user_id, wt_id)
             return redirect(url_for("workout_templates"))
-        if request.form.get("is_delete_adopted_template") == "true":
-            wt_id = cast(int, request.form["template_id"])
-            workouts_repo.delete_adopted_workout_template(user_id, wt_id)
+        if request.form.get("wt_pop_owner") == "true":
+            wt_id = int(request.form["wt_id"])
+            workouts_repo.delete_my_workout_template_latest_version(user_id, wt_id)
             return redirect(url_for("workout_templates"))
-        
-        # Add template
-        name = request.form.get("name", "").strip()
-        if not name:
-            flash("[VIRHE] Treenipohjalla on oltava nimi")
-            return redirect(url_for("workout_templates"))
-        desc = request.form.get("desc", "").strip() 
-        tags_input = request.form.get("tags", "").strip()
-        tags = tags_input.split(",") if tags_input else [] 
-        tag_count = len(tags)
-        tags = [t.strip() for t in tags if t.strip()]
-        if len(tags) != tag_count:
-            flash("[VIRHE] Virheellinen luokitus")
-            return redirect(url_for("workout_templates"))
-        workouts_repo.add_my_workout_template(user_id, name, desc, tags)
      
     my_templates = workouts_repo.get_workout_templates(user_id)
     adopted_templates = workouts_repo.get_adopted_workout_templates(user_id)
@@ -336,13 +351,242 @@ def workout_templates() -> str | Any:
                            categories = categories_map,
                            tags = tags_map)
 
+@app.route("/workouts/templates/create", methods = ["GET", "POST"])
+def create_workout_template() -> str | Any:
+    user_id = get_auth_user()
+    if request.method == "POST":
+        check_csrf()
+        if request.form.get("wt_submit") == "true": 
+            name = request.form.get("name", "").strip() 
+            if not name:
+                flash("[VIRHE] Treenillä on oltava nimi")
+                return redirect(url_for("create_workout_template"))
+            desc = request.form.get("desc", "").strip()
+            tags_input = request.form.get("tags", "").strip()
+            tags = tags_input.split(",") if tags_input else [] 
+            tag_count = len(tags)
+            tags = [t.strip() for t in tags if t.strip()]
+            if len(tags) != tag_count:
+                flash("[VIRHE] Virheellinen luokitus")
+                return redirect(url_for("create_workout_template"))    
+            exercises = [
+                int(e["exercise_template_id"])
+                for e in session["wtc"]["exercises"]
+            ]
+            if exercises:
+                workouts_repo.add_my_workout_template(user_id, name, desc, tags, exercises)
+                del session["wtc"]
+                return redirect(url_for("workout_templates"))
+            flash("[VIRHE] Treenillä on oltava harjoituksia")
+            
+            name = session["wtc"]["name"] = name
+            desc = session["wtc"]["description"] = desc
+            tags = session["wtc"]["tags"] = tags
+            session["wtc"]["modified"] = True
+            session.modified = True
+    
+        elif request.form.get("et_add") == "true":
+            exercise_id = int(request.form["et_id"])
+            exercise = workouts_repo.get_exercise_template(exercise_id)
+            if not exercise:
+                abort(BAD_REQUEST)
+            session["wtc"]["exercises"].append(dict(exercise))
+            session["wtc"]["modified"] = True
+            session.modified = True
+        else:
+            # Remove
+            et_id = int(request.form["et_id"])
+            # Remove first in case there are many instances of the same exercise
+            remove_index = -1
+            for index, e in enumerate(session["wtc"]["exercises"]):
+                if e["exercise_template_id"] == et_id:
+                    remove_index = index
+                    break
+            if remove_index != -1:
+                del session["wtc"]["exercises"][remove_index]
+                session["wtc"]["modified"] = True
+                session.modified = True
+            else:
+                flash("Harjoitusta ei ole lisätty pohjaan")
+        
+        return render_template("create-workout-template.html") 
+    
+    # GET
+    # This session won't preserve between visits to different pages
+    # The session handling becomes too complex with many edge cases 
+    # for trying to accomplish that
+    if "wtc" in session:
+        del session["wtc"]
+    my_exercise_templates = exercises_repo.get_exercise_templates(user_id)
+    session["wtc"] = {
+        "user_id": user_id,
+        "name": "",
+        "description": "",
+        "tags": [],
+        "exercises": [],
+        "my_templates": [dict(et) for et in my_exercise_templates]
+    }
+    return render_template("create-workout-template.html") 
+
+@app.route("/workouts/templates/edit", methods = ["GET", "POST"])
+def edit_workout_template() -> str | Any:
+    user_id = get_auth_user()
+    if request.method == "POST":
+        check_csrf()
+        if request.form.get("wt_submit") == "true": 
+            name = request.form.get("name", "").strip() 
+            if not name:
+                flash("[VIRHE] Treenillä on oltava nimi")
+                return redirect(url_for("edit_workout_template", 
+                                        wt_id = session["wte"]["template_id"]))
+            desc = request.form.get("desc", "").strip()
+            tags_input = request.form.get("tags", "").strip()
+            tags = tags_input.split(",") if tags_input else [] 
+            tag_count = len(tags)
+            tags = [t.strip() for t in tags if t.strip()]
+            if len(tags) != tag_count:
+                flash("[VIRHE] Virheellinen luokitus")
+                return redirect(url_for("edit_workout_template",
+                                        wt_id = session["wte"]["template_id"]))    
+            exercises = [
+                int(e["exercise_template_id"])
+                for e in session["wte"]["exercises"]
+            ]
+            if exercises:
+                template_id = session["wte"]["template_id"]
+                workouts_repo.update_my_workout_template(user_id, template_id, name, desc, tags, exercises)
+                del session["wte"]
+                return redirect(url_for("workout_templates"))
+            flash("[VIRHE] Treenillä on oltava harjoituksia")
+            
+            session["wte"]["name"] = name
+            session["wte"]["description"] = desc
+            session["wte"]["tags"] = tags
+            session.modified = True
+    
+        elif request.form.get("et_add") == "true":
+            exercise_id = int(request.form["et_id"])
+            exercise = workouts_repo.get_exercise_template(exercise_id)
+            if not exercise:
+                abort(BAD_REQUEST)
+            session["wte"]["exercises"].append(dict(exercise))
+            session.modified = True
+        else:
+            # Remove
+            et_id = int(request.form["et_id"])
+            # Remove first in case there are many instances of the same exercise
+            remove_index = -1
+            for index, e in enumerate(session["wte"]["exercises"]):
+                if e["exercise_template_id"] == et_id:
+                    remove_index = index
+                    break
+            if remove_index != -1:
+                del session["wte"]["exercises"][remove_index]
+                session.modified = True
+            else:
+                flash("Harjoitusta ei ole lisätty pohjaan")
+        
+        return render_template("edit-workout-template.html")
+    
+    # GET
+    # This session won't preserve between visits to different pages
+    # The session handling becomes too complex with many edge cases 
+    # for trying to accomplish that
+    if "wte" in session:
+        del session["wte"]
+    template_id = request.args.get("wt_id")
+    wt_id = int(str(template_id))
+    wt = workouts_repo.get_workout_template(wt_id) 
+    if not wt:
+        abort(BAD_REQUEST)
+    name = wt["name"]
+    description = wt["description"] or ""
+    tags = wt["tags"].split(",") if wt["tags"] else []
+    exercises = workouts_repo.get_workout_template_exercises(user_id, wt_id)
+    my_exercise_templates = exercises_repo.get_exercise_templates(user_id)
+    session["wte"] = {
+        "modified": False,
+        "user_id": user_id,
+        "template_id": template_id,
+        "name": name,
+        "description": description,
+        "tags": tags,
+        "exercises": [dict(et) for et in exercises],
+        "my_templates": [dict(et) for et in my_exercise_templates]
+    }
+            
+    return render_template("edit-workout-template.html")
+
 @app.route("/workouts/templates/<int:template_id>", methods = ["GET", "POST"])
-def view_workout_template(template_id: int) -> str | Any:
+def view_workout_template_(template_id: int) -> str | Any:
+    user_id = get_auth_user()
+    if request.method == "POST": 
+        check_csrf()
+        if request.form.get("wt_update") == "true":
+            name = session["wt_edit"]["template"]["name"]
+            desc = session["wt_edit"]["template"]["description"]
+            tags = session["wt_edit"]["tags"]
+            print(session["wt_edit"])
+            exercise_template_ids = [
+                int(e["exercise_template_id"])
+                for e in session["wt_edit"]["exercises"]
+            ] 
+            workouts_repo.update_workout_template(user_id, template_id, name, desc, tags)
+            workouts_repo.update_workout_template_exercises(user_id, template_id, exercise_template_ids)
+            del session["wt_edit"]
+            return redirect(url_for("workout_templates"))
+        if request.form.get("et_remove") == "true":
+            et_index = int(request.form["et_index"])
+            del session["wt_edit"]["exercises"][et_index]
+            session.modified = True
+        elif request.form.get("wt_comment") == "true":
+            content = request.form.get("content", "").strip()
+            workouts_repo.add_workout_template_comment(user_id, template_id, content)
+        else:
+            # Update template
+            name = request.form.get("name", "").strip() 
+            if not name:
+                flash("[VIRHE] Treenillä on oltava nimi")
+                return redirect(url_for("view_workout_template", template_id = template_id))
+            desc = request.form.get("desc", "").strip()
+            tags_input = request.form.get("tags", "").strip()
+            tags = tags_input.split(",") if tags_input else [] 
+            tag_count = len(tags)
+            tags = [t.strip() for t in tags if t.strip()]
+            if len(tags) != tag_count:
+                flash("[VIRHE] Virheellinen luokitus")
+                return redirect(url_for("view_workout_template", template_id = template_id))
+            session["wt_edit"]["template"]["name"] = name
+            session["wt_edit"]["template"]["description"] = desc
+            session["wt_edit"]["tags"] = tags
+            session.modified = True
+    
+    if not("wt_edit" in session):
+        first_or_prev_workout_id = workouts_repo.get_previous_workout_template_id(template_id)
+        print(first_or_prev_workout_id)
+        template = workouts_repo.get_workout_template(first_or_prev_workout_id)
+        if not template:
+            abort(PAGE_NOT_FOUND)
+        tags = template["tags"].split(",") if template["tags"] else []
+        exercises = workouts_repo.get_workout_template_exercises(user_id, first_or_prev_workout_id)
+        session["wt_edit"] = {
+            "template": dict(template),
+            "tags": tags,
+            "exercises": [dict(e) for e in exercises] 
+        }
+    comments = workouts_repo.get_workout_template_comments(template_id)
+    creator_id = workouts_repo.get_workout_template_creator_id(template_id) 
+    return render_template("workout-template.html",
+                           comments = comments,
+                           editable = user_id == creator_id)
+
+@app.route("/workouts_/templates/<int:template_id>", methods = ["GET", "POST"])
+def view_workout_template_OLD(template_id: int) -> str | Any:
     user_id = get_auth_user()
     if request.method == "POST": 
         check_csrf()
         if request.form.get("is_remove_exercise") == "true":
-            exercise_id = cast(int, request.form.get("exercise_template_id"))
+            exercise_id = int(str(request.form.get("exercise_template_id")))
             workouts_repo.remove_exercise_from_workout_template(user_id, template_id, exercise_id)
         elif request.form.get("is_comment") == "true":
             content = request.form.get("content", "").strip()
@@ -365,7 +609,7 @@ def view_workout_template(template_id: int) -> str | Any:
     
     template = workouts_repo.get_workout_template(template_id)
     if not template:
-        abort(URL_NOT_FOUND)
+        abort(PAGE_NOT_FOUND)
     tags = template["tags"].split(",") if template["tags"] else []
     exercises = workouts_repo.get_workout_template_exercises(user_id, template_id)
     comments = workouts_repo.get_workout_template_comments(template_id)
@@ -375,7 +619,7 @@ def view_workout_template(template_id: int) -> str | Any:
                            tags = tags,
                            exercises = exercises,
                            comments = comments,
-                           has_permissions = user_id == creator_id)
+                           editable = user_id == creator_id)
 
 @app.route("/workouts/templates/tag")
 def workout_templates_tag() -> str:
@@ -397,7 +641,7 @@ def workouts_search() -> str | Any:
     user_id = get_auth_user()
     if request.method == "POST":
         check_csrf()
-        template_id = cast(int, request.form.get("template_id"))
+        template_id = int(str(request.form.get("template_id")))
         workouts_repo.add_adopted_workout_template(user_id, template_id)
         return redirect(url_for("workout_templates"))
     search_query = request.args.get("query", "").strip() 
@@ -416,28 +660,6 @@ def workouts_search() -> str | Any:
                            search_query = "",
                            templates = [],
                            tags = {})
-
-@app.route("/workouts/templates/add-exercises/<int:template_id>", methods = ["GET", "POST"])
-def add_workout_exercises(template_id: int) -> str | Any:
-    user_id = get_auth_user()
-    creator_id = workouts_repo.get_workout_template_creator_id(template_id)
-    if creator_id == -1:
-        abort(URL_NOT_FOUND)
-    if user_id != creator_id:
-        abort(FORBIDDEN)
-    if request.method == "POST":
-        check_csrf()
-        exercise_id = cast(int, request.form.get("exercise_template_id"))
-        workouts_repo.add_exercise_to_workout(user_id, template_id, exercise_id)
-        return redirect(url_for("view_workout_template", template_id = template_id))
-    workout_template_name = workouts_repo.get_workout_template_name(template_id)
-    templates = exercises_repo.get_exercise_templates(user_id)
-    adopted_templates = exercises_repo.get_adopted_exercise_templates(user_id)
-    for t in adopted_templates:
-        templates.append(t)
-    return render_template("workout-add-exercises.html",
-                           name = workout_template_name,
-                           templates = templates)
 
 ### CLI ###
 

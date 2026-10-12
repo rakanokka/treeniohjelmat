@@ -11,7 +11,7 @@
     </ul>
 </div>
 <div class="page-container">
-	{% if has_permissions %}
+	{% if editable %}
 	<br>
 	<form action="" method="POST" class="form-stacked">
 		<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
@@ -20,55 +20,52 @@
 			type="text" 
 			id="name" 
 			name="name" 
-			value="{{ template.name }}" 
+			value="{{ session.wt_edit.template.name }}" 
 			required>
 		<label for="name">Treenin kuvaus:</label>
 		<input 
 			type="text" 
 			id="desc" 
 			name="desc" 
-			value="{{ template.description or "" }}">
+			value="{{ session.wt_edit.template.description or "" }}">
 		<label for="name">Treenin luokat:</label>
         <input 
 			style="width: 300px" 
 			type="text" 
 			id="tags" 
 			name="tags" 
-			value="{{ tags | join(',') }}"
+			value="{{ session.wt_edit.tags | join(',') }}"
 			placeholder="Syötä pilkulla erotettuna listana...">
-        <button type="submit" class="btn">Päivitä</button>	
+        <button type="submit" class="btn">Päivitä perustiedot</button>
+		<p style="color: red">HUOM. Tämä lomake päivittää vain treenipohjan perustiedot (sessioniin, ei tietokantaan)</p>
     </form>
-	<br>
-	{#<form action="" method="POST" class="form-stacked">
-		<input type="hidden" name="is_delete_template" value="true">
-		<button type="submit" class="btn">Poista</button>	
-	</form>#}
+	<br>	
 	{% else %}
 	<ul>
-		<li>Treenin nimi: {{ template.name }}</li>
-		{% if template.description %}
-		<li>Treenin kuvaus: {{ template.description }}</li>
+		<li>Treenin nimi: {{ session.wt_edit.template.name }}</li>
+		{% if session.wt_edit.template.description %}
+		<li>Treenin kuvaus: {{ session.wt_edit.template.description }}</li>
 		{% else %}
 		<li>Treenin kuvaus: <i>Ei kuvausta</i></li>
 		{% endif %}
-		{% if tags %}
+		{% if session.wt_edit.tags %}
 		<li>
 			Treenin luokat:
-			{% for tag in tags %}
+			{% for tag in session.wt_edit.tags %}
 			<a href="{{ url_for('workout_templates_tag', name = tag) }}">{{ tag }}</a>{% if not loop.last %}, {% endif %}
 			{% endfor %}
 		</li>
 		{% else %}
 		<li>Treenin luokat: <i>Ei luokkia</i></li>
 		{% endif %}
-		<li>Luoja: {{ template.creator_name }}</li>
+		<li>Luoja: {{ session.wt_edit.template.creator_name }}</li>
 	<ul>
 	{% endif %}
 	<br>
 	<h2>Harjoitukset</h2>
-	{% if exercises %}	
+	{% if session.wt_edit.exercises %}	
 	<div class="list-container">
-	{% for et in exercises %}	
+	{% for et in session.wt_edit.exercises %}	
 		<div class="list-item exercise-item">
 			<p class="bold-text">{{ et.name }}</p>
 			<p>{{ et.category }}</p>
@@ -80,12 +77,12 @@
 				<p class="key">Toistot:</p>	
 				<p class="value">{{ et.reps }}</p>	
 			</div>
-			{% if has_permissions %}
+			{% if editable %}
 			<div class="item-extra">
 				<form action="" method="POST">
 					<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
-					<input type="hidden" name="exercise_template_id" value="{{ et.exercise_template_id }}">	
-					<input type="hidden" name="is_remove_exercise" value="true">
+					<input type="hidden" name="et_index" value="{{ loop.index0 }}">	
+					<input type="hidden" name="et_remove" value="true">
 					<button type="submit" class="btn">Poista treenistä</button>
 				</form>
 			</div>
@@ -97,17 +94,23 @@
 	<p>Ei harjoituksia.</p> 
 	<br>
 	{% endif %}
-	{% if has_permissions %}
-	<a href="{{ url_for('add_workout_exercises', template_id = template.id) }}">Lisää harjoitus</a>
+	{% if editable %}
+	<a href="{{ url_for('add_workout_exercises', template_id = session.wt_edit.template.id) }}">Lisää harjoitus</a>
 	{% endif %}
 	<br>
+	<form action="" method="POST" class="form-stacked">
+		<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
+		<input type="hidden" name="wt_update" value="true">
+		<button type="submit" class="btn">Päivitä pohja</button>	
+		<p style="color: red">HUOM. Tämä painike päivittää treenipohjan tietokantaan</p>
+	</form>
 	<div class="comments-section">
 		<h3>Kommentit ({{ comments | length }})</h3>
 		<br>
 		<form action="" method="POST" class="comment-form">
 			<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
 			<textarea name="content" placeholder="Kirjoita kommentti..." rows="3" required></textarea>
-			<input type="hidden" name="is_comment" value="true">
+			<input type="hidden" name="wt_comment" value="true">
 			<button type="submit" class="btn">Lähetä</button>
 		</form>
 		<br>

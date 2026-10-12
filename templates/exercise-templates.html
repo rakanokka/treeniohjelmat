@@ -31,7 +31,11 @@
 	{% for et in my_templates %}	
 		<div class="list-item exercise-item">
 			<p class="bold-text">{{ et.name }}</p>
+			{% if et.category %}
 			<p>{{ et.category }}</p>
+			{% else %}
+			<p class="italic-text">Ei ryhmää</p>
+			{% endif %}
 			<div class="item-info-entry">
 				<p class="key">Sarjat:</p>	
 				<p class="value">{{ et.sets }}</p>	
@@ -51,6 +55,16 @@
 						<button type="submit" class="btn">Poista</button>	
 					</form>
 				</span>
+				{% if et.is_root == 0 %}
+				<span>
+					<form action="" method="POST" class="form-stacked">
+						<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
+						<input type="hidden" name="template_id" value="{{ et.id }}">	
+						<input type="hidden" name="is_pop_owner_template" value="true">
+						<button type="submit" class="btn">Palaa edelliseen</button>	
+					</form>
+				</span>	
+				{% endif %}
 				<span>
 					<a href="{{ url_for('view_exercise_template', template_id = et.id) }}">
 						<button class="btn" type="submit">Tarkastele</button>
@@ -71,7 +85,11 @@
 	{% for et in adopted_templates %}	
 		<div class="list-item exercise-item">
 			<p class="bold-text">{{ et.name }}</p>
+			{% if et.category %}
 			<p>{{ et.category }}</p>
+			{% else %}
+			<p class="italic-text">Ei ryhmää</p>
+			{% endif %}
 			<div class="item-info-entry">
 				<p class="key">Sarjat:</p>	
 				<p class="value">{{ et.sets }}</p>	
@@ -91,6 +109,27 @@
 						<button type="submit" class="btn">Poista käytöstä</button>	
 					</form>
 				</span>
+				{% if et.has_next_version == 1 %}
+				<span>
+					<form action="" method="POST">
+						<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
+						<input type="hidden" name="template_id" value="{{ et.id }}">
+						<input type="hidden" name="is_update_adopted_template" value="true">
+						<label>Uudempi versio löytyy</label>
+						<button class="btn" type="submit">Päivitä seuraavaan</button>
+					</form>
+				</span>
+				{% endif %}
+				{% if et.is_root == 0 %}
+				<span>
+					<form action="" method="POST" class="form-stacked">
+						<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
+						<input type="hidden" name="template_id" value="{{ et.id }}">	
+						<input type="hidden" name="is_pop_adopted_template" value="true">
+						<button type="submit" class="btn">Palaa edelliseen</button>	
+					</form>
+				</span>	
+				{% endif %}
 				<span>
 					<a href="{{ url_for('view_exercise_template', template_id = et.id) }}">
 						<button class="btn" type="submit">Tarkastele</button>
