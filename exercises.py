@@ -1,39 +1,27 @@
 import database
 
-def add_my_exercise_template(user_id: int, name: str, category: str, target_sets: int, target_reps: int) -> bool:
-    connection = database.get_connection()
-    if not connection:
-        return False
-    try:
-        with connection:
-            sql = """
-            INSERT INTO exercise_template (creator_id, name, category, target_sets, target_reps)
-            VALUES (?, ?, ?, ?, ?) 
-            """
-            c = connection.execute(sql, [
-                user_id, 
-                name.strip(), 
-                category.strip() or None, 
-                target_sets, 
-                target_reps
-            ])
-            template_id = c.lastrowid
-            sql = "UPDATE exercise_template SET root_id = ? WHERE id = ?"
-            connection.execute(sql, [template_id, template_id])
-        return True
-    except Exception as e:
-        print(f"SQLite Error: {e}")
-        return False
-    finally:
-        connection.close()
+def add_my_exercise_template(user_id: int, name: str, category: str, target_sets: int, target_reps: int):
+    sql = """
+    INSERT INTO exercise_template (creator_id, name, category, target_sets, target_reps)
+    VALUES (?, ?, ?, ?, ?) 
+    """
+    template_id = database.execute_insert(sql, [
+        user_id, 
+        name.strip(), 
+        category.strip() or None, 
+        target_sets, 
+        target_reps
+    ])
+    sql = "UPDATE exercise_template SET root_id = ? WHERE id = ?"
+    database.execute_updel(sql, [template_id, template_id])
 
-def add_adopted_exercise_template(user_id: int, template_id: int) -> bool:
+def add_adopted_exercise_template(user_id: int, template_id: int):
     sql = "INSERT INTO user_exercise_template (user_id, exercise_template_id) VALUES (?, ?)"
-    return database.execute(sql, [user_id, template_id])
+    database.execute_insert(sql, [user_id, template_id])
 
-def add_excercise_template_comment(user_id: int, template_id: int, content: str) -> bool:
+def add_excercise_template_comment(user_id: int, template_id: int, content: str):
     sql = "INSERT INTO user_comment (user_id, exercise_template_id, content) VALUES (?, ?, ?)"
-    return database.execute(sql, [user_id, template_id, content])
+    database.execute_insert(sql, [user_id, template_id, content])
 
 def get_excercise_template_comments(template_id: int) -> list[dict]:
     sql = """
@@ -302,107 +290,73 @@ def get_exercise_logs(user_id: int) -> list[dict]:
     """
     return database.query(sql, [user_id])
 
-def update_exercise_template(user_id: int, template_id: int, name: str, category: str, target_sets: int, target_reps: int) -> bool:
-    connection = database.get_connection()
-    if not connection:
-        return False
+def update_exercise_template(user_id: int, template_id: int, name: str, category: str, target_sets: int, target_reps: int):
     sql = "SELECT root_id FROM exercise_template WHERE creator_id = ? AND id = ?"
-    r = database.query_with(connection, sql, [user_id, template_id])
+    r = database.query(sql, [user_id, template_id])
     if not r:
-        connection.close()
-        return False
+        return
     root_id = r[0]["root_id"]
-    try: 
-        with connection:
-            sql = """
-            INSERT INTO exercise_template (creator_id, root_id, name, category, target_sets, target_reps)
-            VALUES (?, ?, ?, ?, ?, ?)
-            """
-            c = connection.execute(sql, [
-                user_id,
-                root_id,
-                name.strip(),
-                category.strip() or None,
-                target_sets,
-                target_reps
-            ])
-            next_version_id = c.lastrowid
-    
-            sql = """
-            UPDATE exercise_template
-            SET next_version_id = ?
-            WHERE id = ?
-            """
-            connection.execute(sql, [next_version_id, template_id])
-        return True
-    except Exception as e:
-        print(f"SQLite Error: {e}")
-        return False
-    finally:
-        connection.close()
+    sql = """
+    INSERT INTO exercise_template (creator_id, root_id, name, category, target_sets, target_reps)
+    VALUES (?, ?, ?, ?, ?, ?)
+    """
+    next_version_id = database.execute_insert(sql, [
+        user_id,
+        root_id,
+        name.strip(),
+        category.strip() or None,
+        target_sets,
+        target_reps
+    ])
 
-def update_adopted_exercise_template(user_id: int, old_template_id: int, new_template_id: int) -> bool:
+    sql = """
+    UPDATE exercise_template
+    SET next_version_id = ?
+    WHERE id = ?
+    """
+    database.execute_updel(sql, [next_version_id, template_id])
+
+def update_adopted_exercise_template(user_id: int, old_template_id: int, new_template_id: int):
     sql = """
     UPDATE user_exercise_template 
     SET exercise_template_id = ? 
     WHERE user_id = ? AND exercise_template_id = ?
     """
-    database.execute(sql, [new_template_id, user_id, old_template_id])
-    return database.row_count() > 0
+    database.execute_updel(sql, [new_template_id, user_id, old_template_id])
 
-def delete_my_exercise_template(user_id: int, template_id: int) -> bool:
-    connection = database.get_connection()
-    if not connection:
-        return False
+def delete_my_exercise_template(user_id: int, template_id: int):
     sql = "SELECT root_id FROM exercise_template WHERE creator_id = ? AND id = ?"
-    r = database.query_with(connection, sql, [user_id, template_id])
+    r = database.query(sql, [user_id, template_id])
     if not r:
-        connection.close()
-        return False
+        return
     root_id = r[0]["root_id"]
     sql = "DELETE FROM exercise_template WHERE creator_id = ? AND root_id = ?"
-    row_count = database.execute_updel_with(connection, sql, [user_id, root_id])
+    database.execute_updel(sql, [user_id, root_id])
 
-    connection.close()
-    return row_count > 0
-
-def delete_adopted_exercise_template(user_id: int, template_id: int) -> bool: 
+def delete_adopted_exercise_template(user_id: int, template_id: int): 
     sql = "DELETE FROM user_exercise_template WHERE user_id = ? AND exercise_template_id = ?"
-    database.execute(sql, [user_id, template_id])
-    return database.row_count() > 0
+    database.execute_updel(sql, [user_id, template_id])
 
-def delete_my_exercise_template_latest_version(user_id: int, template_id: int) -> bool:
-    connection = database.get_connection()
-    if not connection:
-        return False
+def delete_my_exercise_template_latest_version(user_id: int, template_id: int):
     sql = "SELECT id FROM exercise_template WHERE creator_id = ? AND next_version_id = ?"
-    r = database.query_with(connection, sql, [user_id, template_id])
+    r = database.query(sql, [user_id, template_id])
     if not r:
-        connection.close()
-        return False
+        return
     prev_template_id = r[0]["id"]
-    try:
-        with connection:
-            sql = """
-            UPDATE user_exercise_template 
-            SET exercise_template_id = ? 
-            WHERE exercise_template_id = ?
-            """
-            connection.execute(sql, [prev_template_id, template_id])
+    sql = """
+    UPDATE user_exercise_template 
+    SET exercise_template_id = ? 
+    WHERE exercise_template_id = ?
+    """
+    database.execute_updel(sql, [prev_template_id, template_id])
 
-            sql = "UPDATE exercise_template SET next_version_id = NULL WHERE id = ?"
-            connection.execute(sql, [prev_template_id])
-    
-            sql = "DELETE FROM exercise_template WHERE id = ?"
-            connection.execute(sql, [template_id])
-        return True
-    except Exception as e:
-        print(f"SQLite Error: {e}")
-        return False
-    finally:
-        connection.close()
+    sql = "UPDATE exercise_template SET next_version_id = NULL WHERE id = ?"
+    database.execute_updel(sql, [prev_template_id])
 
-def delete_exercise_log(user_id: int, exercise_id: int) -> bool:
+    sql = "DELETE FROM exercise_template WHERE id = ?"
+    database.execute_updel(sql, [template_id])
+
+def delete_exercise_log(user_id: int, exercise_id: int):
     sql = """
     DELETE FROM exercise_log
     WHERE id = ? 
@@ -412,5 +366,4 @@ def delete_exercise_log(user_id: int, exercise_id: int) -> bool:
         WHERE user_id = ?
     )
     """
-    database.execute(sql, [exercise_id, user_id])
-    return database.row_count() > 0
+    database.execute_updel(sql, [exercise_id, user_id])
