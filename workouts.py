@@ -23,7 +23,7 @@ def add_my_workout_template(user_id: int, name: str, description: str, tags: lis
     INSERT INTO workout_exercise_template 
     (workout_template_id, exercise_template_id, order_index)
     VALUES (?, ?, ?)
-        """
+    """
     for order_index, exercise_id in enumerate(exercise_ids):    
         database.execute_insert(sql, [template_id, exercise_id, order_index])
 
@@ -346,37 +346,6 @@ def find_workout_templates_by_tag(tag: str) -> list[dict]:
     """
     return database.query(sql, [f"%{tag.strip()}%"])
 
-def find_workout_templates_by_tag_OLD(tag: str) -> list[dict]:
-    sql = """
-    SELECT 
-        wt.id AS id,
-        wt.name AS name,
-        wt.description AS description,
-        wt.creator_id AS creator_id,
-        u.username AS creator_name,
-        GROUP_CONCAT(DISTINCT t.name) AS tags,
-        (SELECT COUNT(*) 
-         FROM workout_exercise_template wet 
-         WHERE wet.workout_template_id = wt.id) AS exercise_count
-    FROM workout_template wt
-    JOIN "user" u 
-        ON wt.creator_id = u.id
-    LEFT JOIN workout_template_tag wtt 
-        ON wt.id = wtt.workout_template_id 
-    LEFT JOIN tag t 
-        ON wtt.tag_id = t.id 
-    WHERE wt.next_version_id IS NULL 
-        AND wt.id IN (
-            SELECT wtt2.workout_template_id 
-            FROM workout_template_tag wtt2 
-            JOIN tag t2 ON wtt2.tag_id = t2.id 
-            WHERE LOWER(t2.name) LIKE LOWER(?)
-        )
-    GROUP BY wt.id
-    ORDER BY wt.name ASC 
-    """
-    return database.query(sql, [f"%{tag.strip()}%"])
-
 def find_workout_templates_by_category(category: str) -> list[dict]:
     sql = """
     SELECT 
@@ -413,37 +382,6 @@ def find_workout_templates_by_category(category: str) -> list[dict]:
     """
     return database.query(sql, [f"%{category.strip()}%"])
 
-def find_workout_templates_by_category_OLD(category: str) -> list[dict]:
-    sql = """
-    SELECT 
-        wt.id AS id,
-        wt.name AS name,
-        wt.description AS description,
-        wt.creator_id AS creator_id,
-        u.username AS creator_name,
-        GROUP_CONCAT(DISTINCT t.name) AS tags,
-        (SELECT COUNT(*) 
-         FROM workout_exercise_template wet 
-         WHERE wet.workout_template_id = wt.id) AS exercise_count
-    FROM workout_template wt
-    JOIN "user" u 
-        ON wt.creator_id = u.id
-    LEFT JOIN workout_template_tag wtt 
-        ON wt.id = wtt.workout_template_id 
-    LEFT JOIN tag t 
-        ON wtt.tag_id = t.id 
-    WHERE wt.next_version_id IS NULL 
-        AND wt.id IN (
-            SELECT wet2.workout_template_id 
-            FROM workout_exercise_template wet2
-            JOIN exercise_template et2 ON wet2.exercise_template_id = et2.id
-            WHERE LOWER(et2.category) LIKE LOWER(?)
-        )
-    GROUP BY wt.id
-    ORDER BY wt.name ASC 
-    """
-    return database.query(sql, [f"%{category.strip()}%"])
-
 def find_workout_templates_by_name(name: str) -> list[dict]:
     sql = """
     SELECT 
@@ -468,32 +406,6 @@ def find_workout_templates_by_name(name: str) -> list[dict]:
         ON wt.id = wet.workout_template_id
     LEFT JOIN exercise_template et 
         ON wet.exercise_template_id = et.id
-    WHERE wt.next_version_id IS NULL 
-        AND LOWER(wt.name) LIKE LOWER(?)
-    GROUP BY wt.id
-    ORDER BY wt.name ASC 
-    """
-    return database.query(sql, [f"%{name.strip()}%"])
-
-def find_workout_templates_by_name_OLD(name: str) -> list[dict]:
-    sql = """
-    SELECT 
-        wt.id AS id,
-        wt.name AS name,
-        wt.description AS description,
-        wt.creator_id AS creator_id,
-        u.username AS creator_name,
-        GROUP_CONCAT(DISTINCT t.name) AS tags,
-        (SELECT COUNT(*) 
-         FROM workout_exercise_template wet 
-         WHERE wet.workout_template_id = wt.id) AS exercise_count
-    FROM workout_template wt
-    JOIN "user" u 
-        ON wt.creator_id = u.id
-    LEFT JOIN workout_template_tag wtt 
-        ON wt.id = wtt.workout_template_id 
-    LEFT JOIN tag t 
-        ON wtt.tag_id = t.id 
     WHERE wt.next_version_id IS NULL 
         AND LOWER(wt.name) LIKE LOWER(?)
     GROUP BY wt.id

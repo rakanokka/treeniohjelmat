@@ -69,6 +69,7 @@ CREATE TABLE exercise_template (
 	next_version_id INTEGER,
     name TEXT NOT NULL CHECK(trim(name) != ''),
 	category TEXT,
+	difficulty TEXT CHECK(difficulty IN ('BEGINNER', 'INTERMEDIATE', 'ADVANCED')) DEFAULT 'INTERMEDIATE',
     target_sets INTEGER NOT NULL CHECK(target_sets >= 0),
     target_reps INTEGER NOT NULL CHECK(target_reps >= 0),
 	FOREIGN KEY (creator_id) REFERENCES "user"(id) ON DELETE CASCADE,

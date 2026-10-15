@@ -6,7 +6,7 @@ import users
 import exercises
 import workouts
 from typing import Any, NamedTuple
-from flask import Flask, abort, flash, render_template, request, redirect, url_for, session
+from flask import Flask, flash, render_template, request, redirect, url_for, session
 from pathlib import Path
 
 app = Flask(__name__)
@@ -28,6 +28,14 @@ FORBIDDEN = 403
 PAGE_NOT_FOUND = 404
 INTERNAL_SERVER_ERROR = 500
 
+ERROR_MESSAGES = {
+    BAD_REQUEST: "Pyynnössä oli virhe tai siitä puuttui vaadittuja tietoja.",
+    UNAUTHORIZED: "Sinun täytyy kirjautua sisään nähdäksesi tämän sivun.",
+    FORBIDDEN: "Sinulla ei ole oikeuksia tähän toimintoon.",
+    PAGE_NOT_FOUND: "Etsimääsi sivua tai kohdetta ei löytynyt.",
+    INTERNAL_SERVER_ERROR: "Palvelimella tapahtui odottamaton virhe. Yritä hetken kuluttua uudelleen."
+}
+
 MAX_INPUT_LENGTH = 100
 MAX_COMMENT_LENGTH = 1000
 MAX_TAG_LENGTH = 50
@@ -44,10 +52,9 @@ def is_valid_email(email: str) -> bool:
         return False
     return bool(re.match(EMAIL_REGEX, email.strip()))
 
-def get_auth_user() -> int:
+def get_auth_user() -> int | None:
     if "user_id" in session:
         return session["user_id"]
-    abort(UNAUTHORIZED)
 
 def has_hidden_input_set_true(name: str) -> bool:
     return request.form.get(name) == "true"
@@ -62,13 +69,18 @@ def get_hidden_input(name: str) -> str:
 def get_hidden_input_as_int(name: str) -> int:
     return int(get_hidden_input(name))
 
-def check_csrf():
+def check_csrf() -> bool:
     if not("csrf_token" in request.form):
-        print("CSRF token not in session")
-        abort(FORBIDDEN)
+        return False
     if request.form["csrf_token"] != session["csrf_token"]:
-        print("CSRF token not in request")
-        abort(FORBIDDEN)
+        return False
+    return True
+
+def error_page(error_code: int) -> str:
+    error_message = ERROR_MESSAGES[error_code]
+    return render_template("error.html",
+                           error_message = error_message,
+                           error_code = error_code)
 
 # Public routes
 
@@ -153,10 +165,11 @@ def post_logout() -> Any:
 
 @app.route("/profile/<int:user_id>")
 def get_profile(user_id: int) -> str:
-    get_auth_user()
+    if not get_auth_user():
+        return error_page(UNAUTHORIZED)
     profile_info = users.get_user_profile_info(user_id)
     if not profile_info:
-        abort(PAGE_NOT_FOUND)
+        return error_page(PAGE_NOT_FOUND)
     workout_templates = users.get_workout_templates_usage_count(user_id)
     recent_workouts = users.get_recent_workouts(user_id)
     favourites = users.get_favourite_exercise_categories(user_id)
@@ -200,13 +213,18 @@ def validate_exercise_template_form() -> ExerciseTemplateFormData:
 @app.route("/exercises")
 def get_exercises() -> str:
     user_id = get_auth_user()
+    if not user_id:
+        return error_page(UNAUTHORIZED)
     exercise_logs = exercises.get_exercise_logs(user_id)
     return render_template("exercises.html", exercises = exercise_logs)
 
 @app.route("/exercises", methods = ["POST"])
 def post_exercises() -> str:
     user_id = get_auth_user()
-    check_csrf()
+    if not user_id:
+        return error_page(UNAUTHORIZED)
+    if not check_csrf():
+        return error_page(FORBIDDEN)
     exercise_id = int(str(request.form.get("exercise_id")))
     exercises.delete_exercise_log(user_id, exercise_id)
     exercise_logs = exercises.get_exercise_logs(user_id)
@@ -217,13 +235,15 @@ def post_exercises() -> str:
 @app.route("/exercises/<int:exercise_id>")
 def get_exercise(exercise_id: int) -> str:
     user_id = get_auth_user()
+    if not user_id:
+        return error_page(UNAUTHORIZED)
     exercise_log = exercises.get_exercise_log(exercise_id)
     if not exercise_log:
-        abort(PAGE_NOT_FOUND)
+        return error_page(PAGE_NOT_FOUND)
     workout_id = exercise_log["workout_id"]
     owner_id = workouts.get_workout_log_user_id(workout_id)
     if user_id != owner_id:
-        abort(FORBIDDEN)
+        return error_page(FORBIDDEN)
     return render_template("exercise.html", exercise = exercise_log)
 
 # Routes /exercises/templates
@@ -231,6 +251,8 @@ def get_exercise(exercise_id: int) -> str:
 @app.route("/exercises/templates")
 def get_exercise_templates() -> str | Any:
     user_id = get_auth_user()
+    if not user_id:
+        return error_page(UNAUTHORIZED)
     my_exercises = exercises.get_exercise_templates(user_id)
     adopted_exercises = exercises.get_adopted_exercise_templates(user_id)
     return render_template("exercise-templates.html", 
@@ -240,7 +262,10 @@ def get_exercise_templates() -> str | Any:
 @app.route("/exercises/templates", methods = ["POST"])
 def post_exercise_templates() -> str | Any:
     user_id = get_auth_user()
-    check_csrf()
+    if not user_id:
+        return error_page(UNAUTHORIZED)
+    if not check_csrf():
+        return error_page(FORBIDDEN)
     if has_hidden_input_set_true("et_delete_owner"):
         # Delete owner template
         et_id = int(request.form["template_id"])
@@ -264,7 +289,7 @@ def post_exercise_templates() -> str | Any:
         et_id = int(request.form["template_id"])
         prev_version_id = exercises.get_exercise_template_previous_version_id(et_id)
         if not prev_version_id:
-            abort(BAD_REQUEST)
+            return error_page(BAD_REQUEST)
         exercises.update_adopted_exercise_template(user_id, et_id, prev_version_id)
         return redirect(url_for("get_exercise_templates"))
     
@@ -273,7 +298,7 @@ def post_exercise_templates() -> str | Any:
         et_id = int(request.form["template_id"])
         next_version_id = exercises.get_exercise_template_next_version_id(et_id)
         if not next_version_id:
-            abort(BAD_REQUEST)
+            return error_page(BAD_REQUEST)
         exercises.update_adopted_exercise_template(user_id, et_id, next_version_id)
         return redirect(url_for("get_exercise_templates"))
     
@@ -289,10 +314,11 @@ def post_exercise_templates() -> str | Any:
 
 @app.route("/exercises/templates/<int:template_id>")
 def get_exercise_template(template_id: int) -> str:
-    get_auth_user() 
+    if not get_auth_user():
+        return error_page(UNAUTHORIZED)
     template = exercises.get_exercise_template(template_id)
     if not template:
-        abort(PAGE_NOT_FOUND)
+        return error_page(PAGE_NOT_FOUND)
     comments = exercises.get_excercise_template_comments(template_id)
     return render_template("exercise-template.html",
                            template = template,
@@ -301,7 +327,10 @@ def get_exercise_template(template_id: int) -> str:
 @app.route("/exercises/templates/<int:template_id>", methods = ["POST"])
 def post_exercise_template(template_id: int) -> Any:
     user_id = get_auth_user()
-    check_csrf()
+    if not user_id:
+        return error_page(UNAUTHORIZED)
+    if not check_csrf():
+        return error_page(FORBIDDEN)
     content = request.form.get("content", "").strip()
     if len(content) > MAX_COMMENT_LENGTH:
         flash(f"[VIRHE] Kommentin pituus saa olla enintään {MAX_COMMENT_LENGTH} merkkiä")
@@ -314,18 +343,22 @@ def post_exercise_template(template_id: int) -> Any:
 @app.route("/exercises/templates/edit/<int:template_id>")
 def get_edit_exercise_template(template_id: int) -> str:
     user_id = get_auth_user()
+    if not user_id:
+        return error_page(UNAUTHORIZED)
     creator_id = exercises.get_exercise_template_creator_id(template_id)
     if user_id != creator_id:
-        abort(FORBIDDEN)
+        return error_page(FORBIDDEN)
     template = exercises.get_exercise_template(template_id)
     return render_template("edit-exercise-template.html", template = template)
 
 @app.route("/exercises/templates/edit/<int:template_id>", methods = ["POST"])
 def post_edit_exercise_template(template_id: int) -> Any:
     user_id = get_auth_user()
+    if not user_id:
+        return error_page(UNAUTHORIZED)
     creator_id = exercises.get_exercise_template_creator_id(template_id)
     if user_id != creator_id:
-        abort(FORBIDDEN)
+        return error_page(FORBIDDEN)
     data = validate_exercise_template_form()
     if data.error_messages:
         push_error_messages(data.error_messages)
@@ -353,6 +386,8 @@ def find_exercise_templates_by(user_id: int, search_type: str, search_query: str
 @app.route("/exercises/search")
 def get_exercises_search() -> str | Any:
     user_id = get_auth_user()
+    if not user_id:
+        return error_page(UNAUTHORIZED)
     search_type = request.args.get("type", "name")
     search_query = request.args.get("query", "").strip() 
     if search_query:
@@ -368,7 +403,10 @@ def get_exercises_search() -> str | Any:
 @app.route("/exercises/search", methods = ["POST"])
 def post_exercises_search() -> Any:
     user_id = get_auth_user()
-    check_csrf()
+    if not user_id:
+        return error_page(UNAUTHORIZED)
+    if not check_csrf():
+        return error_page(FORBIDDEN)
     template_id = int(str(request.form.get("template_id")))
     exercises.add_adopted_exercise_template(user_id, template_id)
     return redirect(url_for("get_exercise_templates"))
@@ -439,37 +477,44 @@ def validate_workout_template_session_data(session_name: str) -> WorkoutTemplate
     tags = session[session_name]["tags"] 
     return validate_workout_template_data(name, desc, tags)
 
+def is_workout_owner(user_id, workout_id) -> bool:
+    owner_id = workouts.get_workout_log_user_id(workout_id)
+    return user_id == owner_id
+
 # Routes /workouts
 
 @app.route("/workouts")
 def get_workouts() -> str:
     user_id = get_auth_user()
+    if not user_id:
+        return error_page(UNAUTHORIZED)
     workout_logs = workouts.get_workout_logs(user_id)
     return render_template("workouts.html", workouts = workout_logs)
 
 @app.route("/workouts", methods = ["POST"])
 def post_workouts() -> str:
     user_id = get_auth_user()
-    check_csrf()
+    if not user_id:
+        return error_page(UNAUTHORIZED)
+    if not check_csrf():
+        return error_page(FORBIDDEN)
     workout_id = get_hidden_input_as_int("workout_id")
     workouts.delete_workout_log(user_id, workout_id) 
     workout_logs = workouts.get_workout_logs(user_id)
     return render_template("workouts.html", workouts = workout_logs)
-
-def check_workout_owner(user_id, workout_id):
-    owner_id = workouts.get_workout_log_user_id(workout_id)
-    if user_id != owner_id:
-        abort(FORBIDDEN)
 
 # Routes /workouts/<id>
 
 @app.route("/workouts/<int:workout_id>")
 def get_workout(workout_id: int) -> str:
     user_id = get_auth_user()
+    if not user_id:
+        return error_page(UNAUTHORIZED)
     workout = workouts.get_workout_log(workout_id)
     if not workout:
-        abort(PAGE_NOT_FOUND)
-    check_workout_owner(user_id, workout_id) 
+        return error_page(PAGE_NOT_FOUND)
+    if not is_workout_owner(user_id, workout_id):
+        return error_page(FORBIDDEN)
     workout_exercises = workouts.get_workout_exercises(workout_id)
     wt_id = workout["workout_template_id"]
     workout_exercise_templates = exercises.get_exercise_templates_in_workout(wt_id)
@@ -481,8 +526,12 @@ def get_workout(workout_id: int) -> str:
 @app.route("/workouts/<int:workout_id>", methods = ["POST"])
 def post_workout(workout_id: int) -> Any:
     user_id = get_auth_user()
-    check_workout_owner(user_id, workout_id) 
-    check_csrf()
+    if not user_id:
+        return error_page(UNAUTHORIZED)
+    if not is_workout_owner(user_id, workout_id): 
+        return error_page(FORBIDDEN)
+    if not check_csrf():
+        return error_page(FORBIDDEN)
     if has_hidden_input_set_true("wl_delete_exercise"):
         exercise_id = get_hidden_input_as_int("exercise_id")
         workouts.remove_exercise_from_workout_log(workout_id, exercise_id) 
@@ -504,6 +553,8 @@ def post_workout(workout_id: int) -> Any:
 @app.route("/workouts/templates")
 def get_workout_templates() -> str:
     user_id = get_auth_user()
+    if not user_id:
+        return error_page(UNAUTHORIZED)
     my_templates = workouts.get_workout_templates(user_id)
     adopted_templates = workouts.get_adopted_workout_templates(user_id)
     tags_map: dict[int, list] = {}
@@ -527,7 +578,10 @@ def get_workout_templates() -> str:
 @app.route("/workouts/templates", methods = ["POST"])
 def post_workout_templates() -> Any:
     user_id = get_auth_user()
-    check_csrf()
+    if not user_id:
+        return error_page(UNAUTHORIZED)
+    if not check_csrf():
+        return error_page(FORBIDDEN)
     
     if has_hidden_input_set_true("wt_commit"):
         # Do workout button press
@@ -557,7 +611,7 @@ def post_workout_templates() -> Any:
         wt_id = get_hidden_input_as_int("wt_id")
         next_version_id = workouts.get_workout_template_next_version_id(wt_id)
         if not next_version_id:
-            abort(BAD_REQUEST)
+            return error_page(BAD_REQUEST)
         workouts.update_adopted_workout_template(user_id, wt_id, next_version_id)
 
     if has_hidden_input_set_true("wt_pop_adopted"):
@@ -565,7 +619,7 @@ def post_workout_templates() -> Any:
         wt_id = get_hidden_input_as_int("wt_id")
         prev_version_id = workouts.get_workout_template_previous_version_id(wt_id)
         if not prev_version_id:
-            abort(BAD_REQUEST)
+            return error_page(BAD_REQUEST)
         workouts.update_adopted_workout_template(user_id, wt_id, prev_version_id)
 
     return redirect(url_for("get_workout_templates"))
@@ -574,10 +628,11 @@ def post_workout_templates() -> Any:
 
 @app.route("/workouts/templates/<int:template_id>")
 def get_workout_template(template_id: int) -> str:
-    get_auth_user()
+    if not get_auth_user():
+        return error_page(UNAUTHORIZED)
     template = workouts.get_workout_template(template_id)
     if not template:
-        abort(PAGE_NOT_FOUND)
+        return error_page(PAGE_NOT_FOUND)
     tags = template["tags"].split(",") if template["tags"] else []
     workout_exercises = workouts.get_workout_template_exercises(template_id)
     comments = workouts.get_workout_template_comments(template_id)
@@ -590,7 +645,10 @@ def get_workout_template(template_id: int) -> str:
 @app.route("/workouts/templates/<int:template_id>", methods = ["POST"])
 def post_workout_template(template_id: int) -> Any:
     user_id = get_auth_user()
-    check_csrf()
+    if not user_id:
+        return error_page(UNAUTHORIZED)
+    if not check_csrf():
+        return error_page(FORBIDDEN)
     content = request.form.get("content", "").strip()
     if len(content) > MAX_COMMENT_LENGTH:
         flash(f"[VIRHE] Kommentin pituus saa olla enintään {MAX_COMMENT_LENGTH} merkkiä")
@@ -616,7 +674,7 @@ def add_workout_template_exercise(session_name: str, page_prefix: str) -> str:
     exercise_id = int(request.form["et_id"])
     exercise = workouts.get_exercise_template(exercise_id)
     if not exercise:
-        abort(BAD_REQUEST)
+        return error_page(BAD_REQUEST)
     session[session_name]["exercises"].append(dict(exercise))
     session[session_name]["valid"] = True
     session.modified = True 
@@ -633,6 +691,8 @@ def remove_workout_template_exercise(session_name: str, page_prefix: str) -> str
 @app.route("/workouts/templates/create")
 def get_create_workout_template() -> str:
     user_id = get_auth_user()
+    if not user_id:
+        return error_page(UNAUTHORIZED)
     my_exercise_templates = exercises.get_exercise_templates(user_id)
     session["wtc"] = {
         "valid": False,
@@ -658,7 +718,10 @@ def submit_create_workout_template(user_id: int) -> str | Any:
 @app.route("/workouts/templates/create", methods = ["POST"])
 def post_create_workout_template() -> str | Any:
     user_id = get_auth_user()
-    check_csrf()
+    if not user_id:
+        return error_page(UNAUTHORIZED)
+    if not check_csrf():
+        return error_page(FORBIDDEN)
     session_name = "wtc"
     page_prefix = "create"
     if has_hidden_input_set_true("wt_create_info"):
@@ -674,11 +737,13 @@ def post_create_workout_template() -> str | Any:
 @app.route("/workouts/templates/edit")
 def get_edit_workout_template() -> str:
     user_id = get_auth_user()
+    if not user_id:
+        return error_page(UNAUTHORIZED)
     template_id = request.args.get("wt_id")
     wt_id = int(str(template_id))
     wt = workouts.get_workout_template(wt_id) 
     if not wt:
-        abort(BAD_REQUEST)
+        return error_page(BAD_REQUEST)
     name = wt["name"]
     description = wt["description"] or ""
     tags = wt["tags"].split(",") if wt["tags"] else []
@@ -712,7 +777,10 @@ def submit_edit_workout_template(user_id: int) -> str | Any:
 @app.route("/workouts/templates/edit", methods = ["POST"])
 def post_workout_template_edit() -> str | Any:
     user_id = get_auth_user()
-    check_csrf()
+    if not user_id:
+        return error_page(UNAUTHORIZED)
+    if not check_csrf():
+        return error_page(FORBIDDEN)
     session_name = "wte"
     page_prefix = "edit"
     if has_hidden_input_set_true("wt_edit_info"):
@@ -726,7 +794,6 @@ def post_workout_template_edit() -> str | Any:
 # Routes /workouts/search
 
 def find_workout_templates_by(user_id: int, search_type: str, search_query: str) -> str:
-    print("search_type", search_type)
     templates = []
     if search_type == "tag":
         templates = workouts.find_workout_templates_by_tag(search_query)
@@ -755,6 +822,8 @@ def find_workout_templates_by(user_id: int, search_type: str, search_query: str)
 @app.route("/workouts/search")
 def get_workouts_search() -> str:
     user_id = get_auth_user()
+    if not user_id:
+        return error_page(UNAUTHORIZED)
     tag = request.args.get("tag")
     if tag:
         # Search via link
@@ -779,7 +848,10 @@ def get_workouts_search() -> str:
 def post_workouts_search() -> str | Any:
     # Adopt template
     user_id = get_auth_user()
-    check_csrf()
+    if not user_id:
+        return error_page(UNAUTHORIZED)
+    if not check_csrf():
+        return error_page(FORBIDDEN)
     template_id = int(request.form["template_id"])
     workouts.add_adopted_workout_template(user_id, template_id)
     return redirect(url_for("get_workout_templates"))

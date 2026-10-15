@@ -1,6 +1,5 @@
 import sqlite3
 import config
-from flask import g
 
 def get_connection() -> sqlite3.Connection:
     connection = sqlite3.connect(config.DATABASE_FILENAME)
