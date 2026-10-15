@@ -1,3 +1,4 @@
+import re
 import secrets
 import config
 import utils
@@ -34,7 +35,14 @@ MAX_SETS = 100
 MAX_REPS = 100
 MAX_WEIGHT = 1000.0
 
+EMAIL_REGEX = r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"
+
 # Common util functions
+
+def is_valid_email(email: str) -> bool:
+    if not email:
+        return False
+    return bool(re.match(EMAIL_REGEX, email.strip()))
 
 def get_auth_user() -> int:
     if "user_id" in session:
@@ -80,20 +88,42 @@ def get_home() -> str:
 
 @app.route("/register")
 def get_register() -> str:
-    return render_template("register.html")
+    return render_template("register.html",
+                           username = "",
+                           email = "",
+                           password1 = "",
+                           password2 = "")
 
 @app.route("/register", methods = ["POST"])
-def post_register() -> Any:
+def post_register() -> str | Any:
     username = request.form.get("username", "").strip()
     email = request.form.get("email", "").strip()
     password1 = request.form.get("password1", "").strip()
     password2 = request.form.get("password2", "").strip()
+    error_messages: list[str] = []
+    
     if password1 != password2:
-        flash("[VIRHE] Salasanat eivät täsmää")
-        return redirect(url_for("get_register"))
+        error_messages.append("Salasanat eivät täsmää")
+    
+    if not is_valid_email(email):
+        error_messages.append("Sähköpostiosoite on virheellinen")
+    
+    if error_messages:
+        push_error_messages(error_messages)
+        return render_template("register.html",
+                               username = username,
+                               email = email,
+                               password1 = password1,
+                               password2 = password2)
+    
     if not users.add_user(username, email, password1):
         flash("[VIRHE] Käyttäjätunnus tai sähköpostiosoite on varattu")
-        return redirect(url_for("get_register"))
+        return render_template("register.html",
+                               username = username,
+                               email = email,
+                               password1 = password1,
+                               password2 = password2)
+    
     return redirect(url_for("get_home"))
 
 @app.route("/login")
@@ -110,7 +140,8 @@ def post_login() -> Any:
         session["username"] = username 
         session["csrf_token"] = secrets.token_hex(16) 
         return redirect(url_for("get_home"))
-    flash("[VIRHE] Käyttäjää ei löydy")
+    
+    flash("[VIRHE] Käyttäjätunnus tai salasana on virheellinen")
     return redirect(url_for("get_login"))
 
 # Auth routes
@@ -358,14 +389,17 @@ def validate_workout_exercise() -> WorkoutLogExercisesData:
     rv = utils.IntListValidator(request.form["reps"], MAX_REPS)
     if not rv.validate():
         error_messages.append(f"Toistojen on oltava lista kokonaislukuja välillä 0 < toisto < {MAX_REPS + 1}")
+    # Negative weights are supported. They may indicate machine assisted weights
     wv = utils.FloatListValidator(request.form["weights"], MAX_WEIGHT, False)
     if not wv.validate():
         error_messages.append(f"Painojen on oltava lista lukuja välillä -{MAX_WEIGHT} < paino < {MAX_WEIGHT}")
     sets = sv.get()
     reps_lst = rv.get()
     weight_lst = wv.get()
-    if not(len(reps_lst) == sets and len(weight_lst) == sets):
-        error_messages.append("Toistojen ja painojen määrien on täsmättävä sarjojen määrän kanssa")
+    if len(reps_lst) != sets:
+        error_messages.append("Toistolistan pituuden on täsmättävä sarjojen määrän kanssa")
+    if len(weight_lst) != sets:
+        error_messages.append("Painolistan pituuden on täsmättävä sarjojen määrän kanssa")
     
     return WorkoutLogExercisesData(error_messages, sets, reps_lst, weight_lst)
 
@@ -455,6 +489,7 @@ def post_workout(workout_id: int) -> Any:
     if data.error_messages:
         push_error_messages(data.error_messages) 
     else:
+        # Add exercise to workout
         name = request.form["wet_name"]
         wet_id = int(request.form["wet_id"])
         workouts.add_exercise_to_workout_log(workout_id, wet_id, name, data.reps, data.weights)
@@ -517,12 +552,18 @@ def post_workout_templates() -> Any:
     if has_hidden_input_set_true("wt_next_adopted"):
         # Adopt next adopted template (next updated version)
         wt_id = get_hidden_input_as_int("wt_id")
-        workouts.update_adopted_workout_template(user_id, wt_id)
+        next_version_id = workouts.get_workout_template_next_version_id(wt_id)
+        if not next_version_id:
+            abort(BAD_REQUEST)
+        workouts.update_adopted_workout_template(user_id, wt_id, next_version_id)
 
     if has_hidden_input_set_true("wt_pop_adopted"):
         # Delete last adopted template (go back to previous version)
         wt_id = get_hidden_input_as_int("wt_id")
-        workouts.delete_adopted_workout_template_latest_version(user_id, wt_id)
+        prev_version_id = workouts.get_workout_template_previous_version_id(wt_id)
+        if not prev_version_id:
+            abort(BAD_REQUEST)
+        workouts.update_adopted_workout_template(user_id, wt_id, prev_version_id)
 
     return redirect(url_for("get_workout_templates"))
 

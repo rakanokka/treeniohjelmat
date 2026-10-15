@@ -160,6 +160,18 @@ def get_exercise_template(template_id: int) -> dict | None:
     r = database.query(sql, [template_id])
     return r[0] if r else None
 
+def get_workout_template_previous_version_id(template_id: int) -> int | None:
+    sql = "SELECT id FROM workout_template WHERE next_version_id = ?"
+    r = database.query(sql, [template_id])
+    return r[0]["id"] if r else None
+
+def get_workout_template_next_version_id(template_id: int) -> int | None:
+    sql = "SELECT next_version_id FROM workout_template WHERE id = ?"
+    r = database.query(sql, [template_id])
+    if r:
+        return r[0]["next_version_id"] or None
+    return None
+
 def get_workout_template_comments(template_id: int) -> list[dict]:
     sql = """
     SELECT 
@@ -661,6 +673,15 @@ def update_my_workout_template(user_id: int, template_id: int, name: str, descri
         return False
     finally:
         connection.close()
+
+def update_adopted_workout_template(user_id: int, old_template_id: int, new_template_id: int) -> bool:
+    sql = """
+    UPDATE user_workout_template 
+    SET workout_template_id = ? 
+    WHERE user_id = ? AND workout_template_id = ?
+    """
+    database.execute(sql, [new_template_id, user_id, old_template_id])
+    return database.row_count() > 0
 
 def delete_my_workout_template(user_id: int, template_id: int) -> bool:
     connection = database.get_connection()
