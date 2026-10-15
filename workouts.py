@@ -14,7 +14,7 @@ def add_my_workout_template(user_id: int, name: str, description: str, tags: lis
         sql = "INSERT OR IGNORE INTO tag (name) VALUES (?)"
         database.execute_insert(sql, [tag])
         sql = """
-        INSERT INTO workout_template_tag (workout_template_id, tag_id)
+        INSERT OR IGNORE INTO workout_template_tag (workout_template_id, tag_id)
         VALUES (?, (SELECT id FROM tag WHERE name = ?))
         """
         database.execute_insert(sql, [template_id, tag])

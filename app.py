@@ -418,9 +418,12 @@ def validate_workout_template_data(name: str, description: str, tags: list[str])
 
     tag_count = len(tags)
     tags = [t.strip() for t in tags if t.strip()]
+    tag_set = set(tags)
     if len(tags) != tag_count:
-        error_messages.append("Virheellinen treenin luokitus. Syötä luokat pilkulla erotettuna listana.")
-     
+        error_messages.append("Virheellinen treenin luokitusmuoto. Syötä luokat pilkulla erotettuna listana.")
+    if len(tag_set) != tag_count:
+        error_messages.append("Virheellinen treenin luokitus. Luokkien on oltava uniikkeja.")
+
     return WorkoutTemplateData(error_messages, name, description, tags)
 
 def validate_workout_template_form_data() -> WorkoutTemplateData:
