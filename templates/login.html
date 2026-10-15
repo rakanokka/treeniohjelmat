@@ -6,7 +6,7 @@
 <div class="auth-form-container ch page-container">
 	<h2>Kirjaudu sisään</h2>	
     <div class="form-container">
-		<form method="POST" action="{{ url_for('login') }}">
+		<form action="{{ url_for('post_login') }}" method="POST">
 			<div class="grid-container grid-2-2">
 				<label for="username">Käyttäjätunnus</label>
 				<input type="text" id="username" name="username" required>
@@ -19,7 +19,7 @@
 		</form>
 		<p class="alt-text">
 			Eikö sinulla ole vielä tiliä? 
-			<a href="{{ url_for('register') }}">Rekisteröidy täällä</a>
+			<a href="{{ url_for('get_register') }}">Rekisteröidy täällä</a>
 		</p>
 	</div>
 </div>

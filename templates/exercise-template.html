@@ -5,15 +5,15 @@
 {% block content %}
 <div class="page-nav exercises-nav">
 	<ul class="no-bullets">
-		<li><a href="{{ url_for('exercises') }}">Harjoitukset</a></li>
-		<li><a href="{{ url_for('exercise_templates') }}">Harjoituspohjat</a></li>
-		<li><a href="{{ url_for('exercises_search') }}">Etsi harjoituspohjia</a></li>
+		<li><a href="{{ url_for('get_exercises') }}">Harjoitukset</a></li>
+		<li><a href="{{ url_for('get_exercise_templates') }}">Harjoituspohjat</a></li>
+		<li><a href="{{ url_for('get_exercises_search') }}">Etsi harjoituspohjia</a></li>
     </ul>
 </div>
 <div class="page-container">	
 	{% if editable %}
 	<h2>Muokkaa harjoituspohjaa</h2>
-	<form action="" method="POST" class="form-stacked">
+	<form action="{{ url_for('get_exercise_template', template_id = template.id) }}" method="POST" class="form-stacked">
 		<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
         <label for="name">Harjoituksen nimi:</label>
 		<input type="text" id="name" name="name" value="{{ template.name }}" required>
@@ -29,7 +29,7 @@
 	{% endif %}
 	<h2>Harjoituspohja tiedot</h2>
 	{% if template.has_previous_version %}
-	<a href="{{ url_for('view_exercise_template', template_id = template.id, get_previous = "true") }}">Edellinen versio</a>
+	<a href="{{ url_for('get_exercise_template', template_id = template.id, get_previous = "true") }}">Edellinen versio</a>
 	<br>
 	{% endif %}
 	<ul>
@@ -45,7 +45,7 @@
 	<div class="comments-section">
 		<h3>Kommentit ({{ comments | length }})</h3>
 		<br>
-		<form action="" method="POST" class="comment-form">
+		<form action="{{ url_for('get_exercise_template', template_id = template.id) }}" method="POST" class="comment-form">
 			<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
 			<textarea name="content" placeholder="Kirjoita kommentti..." rows="3" required></textarea>
 			<input type="hidden" name="is_comment" value="true">

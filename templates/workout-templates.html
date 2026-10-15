@@ -5,41 +5,45 @@
 {% block content %}
 <div class="page-nav workouts-nav">
 	<ul class="no-bullets">
-		<li><a href="{{ url_for('workouts') }}">Treenit</a></li>
-		<li><a href="{{ url_for('workouts_search') }}">Etsi treenipohjia</a></li>
+		<li><a href="{{ url_for('get_workouts') }}">Treenit</a></li>
+		<li><a href="{{ url_for('get_workouts_search') }}">Etsi treenipohjia</a></li>
     </ul>
 </div>
 <div class="page-container">
 	<br>
-	<a href="{{ url_for('create_workout_template') }}">Luo uusi treenipohja</a>
+	<a href="{{ url_for('get_create_workout_template') }}">Luo uusi treenipohja</a>
 	<br>
 	<h2>Luodut pohjat</h2>
 	{% if my_templates %}
 	<div class="list-container">
 	{% for wt in my_templates %}
-		{% set wt_categories = categories.get(wt.id, []) %}
-		{% set wt_tags = tags.get(wt.id, []) %}
+		{% set categories_list = categories.get(wt.id, []) %}
+		{% set tags_list = tags.get(wt.id, []) %}
 		<div class="list-item workout-item">
 			<p class="bold-text">{{ wt.name }}</p>
-			{% if wt_categories %}
-			<p>{{ wt_categories | join(", ") }}</p>
+			
+			{% if categories_list %}
+			<p>{{ categories_list | join(", ") }}</p>
 			{% else %}
 			<p class="italic-text">Ei ryhmiä</p>
 			{% endif %}
-			{% if wt_tags %}
+			
+			{% if tags_list %}
 			<p>
-				{% for tag in wt_tags %}
-				<a href="{{ url_for('workout_templates_tag', name = tag) }}">{{ tag }}</a>{% if not loop.last %}, {% endif %}
+				{% for tag in tags_list %}
+				<a href="{{ url_for('get_workouts_search', tag = tag) }}">{{ tag }}</a>{% if not loop.last %}, {% endif %}
 				{% endfor %}
 			</p>
 			{% else %}
 			<p class="italic-text">Ei luokkia</p>
 			{% endif %}
+			
 			{% if wt.description %}
 			<p>{{ wt.description }}</p>
 			{% else %}
 			<p class="italic-text">Ei kuvausta</p>
 			{% endif %}
+			
 			<div class="item-extra">
 				<span>{{ wt.workout_count }} treeniä tehty</span>
 				<span>{{ wt.exercise_count }} harjoitusta</span>
@@ -68,12 +72,12 @@
 						<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
 						<input type="hidden" name="wt_id" value="{{ wt.id }}">	
 						<input type="hidden" name="wt_pop_owner" value="true">
-						<button type="submit" class="btn">Palaa edelliseen</button>	
+						<button type="submit" class="btn">Poista viimeisin</button>	
 					</form>
 				</span>	
 				{% endif %}
 				<span>
-					<a href="{{ url_for('edit_workout_template', wt_id = wt.id) }}">
+					<a href="{{ url_for('get_edit_workout_template', wt_id = wt.id) }}">
 						<button class="btn" type="submit">Muokkaa</button>
 					</a>	
 				</span>
@@ -90,29 +94,33 @@
 	{% if adopted_templates %}
 	<div class="list-container">
 	{% for wt in adopted_templates %}	
-		{% set wt_categories = categories.get(wt.id, []) %}
-		{% set wt_tags = tags.get(wt.id, []) %}
+		{% set categories_list = categories.get(wt.id, []) %}
+		{% set tags_list = tags.get(wt.id, []) %}
 		<div class="list-item workout-item">
 			<p class="bold-text">{{ wt.name }}</p>
-			{% if wt_categories %}
-			<p>{{ wt_categories | join(", ") }}</p>
+			
+			{% if categories_list %}
+			<p>{{ categories_list | join(", ") }}</p>
 			{% else %}
 			<p class="italic-text">Ei ryhmiä</p>
 			{% endif %}
-			{% if wt_tags %}
+			
+			{% if tags_list %}
 			<p>
-				{% for tag in wt_tags %}
-				<a href="{{ url_for('workout_templates_tag', name = tag) }}">{{ tag }}</a>{% if not loop.last %}, {% endif %}
+				{% for tag in tags_list %}
+				<a href="{{ url_for('get_workouts_search', tag = tag) }}">{{ tag }}</a>{% if not loop.last %}, {% endif %}
 				{% endfor %}
 			</p>
 			{% else %}
 			<p class="italic-text">Ei luokkia</p>
 			{% endif %}
+			
 			{% if wt.description %}
 			<p>{{ wt.description }}</p>
 			{% else %}
 			<p class="italic-text">Ei kuvausta</p>
 			{% endif %}
+			
 			<div class="item-extra">
 				<span>{{ wt.workout_count }} treeniä tehty</span>
 				<span>{{ wt.exercise_count }} harjoitusta</span>
@@ -156,11 +164,11 @@
 					</form>
 				</span>	
 				{% endif %}
-				{#<span>
-					<a href="{{ url_for('view_workout_template', template_id = wt.id) }}">
+				<span>
+					<a href="{{ url_for('get_workout_template', template_id = wt.id) }}">
 						<button class="btn" type="submit">Tarkastele</button>
 					</a>	
-				</span>#}
+				</span>
 			</div>
 		</div>
 	{% endfor %}

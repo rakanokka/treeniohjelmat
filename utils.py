@@ -15,16 +15,19 @@ def set_log_filters(logger_name: str, log_filters: list[logging.Filter]):
         logger.addFilter(log_filter)
 
 class IntValidator:
-    def __init__(self, input_value: Any, positive = True):
+    def __init__(self, input_value: Any, max_abs_value: int, positive = True):
         self.input_value = input_value 
+        self.max_abs_value = max_abs_value 
         self.validated = 0
         self.positive = positive
 
     def validate(self) -> bool:
         result = True;
         try: 
-            v = int(self.input_value)
+            v = int(self.input_value) 
             if self.positive and v <= 0:
+                return False
+            if abs(v) > self.max_abs_value:
                 return False
             self.validated = v 
         except Exception:
@@ -35,8 +38,9 @@ class IntValidator:
         return self.validated
 
 class IntListValidator:
-    def __init__(self, input_value: str, positive = True):
+    def __init__(self, input_value: str, max_abs_value: int, positive = True):
         self.input_value = input_value 
+        self.max_abs_value = max_abs_value 
         self.validated: list[int] = [] 
         self.positive = positive
 
@@ -48,6 +52,8 @@ class IntListValidator:
                 v = int(el)
                 if self.positive and v <= 0:
                     return False
+                if abs(v) > self.max_abs_value:
+                    return False
                 self.validated.append(v)
         except Exception:
             result = False
@@ -57,8 +63,9 @@ class IntListValidator:
         return self.validated
 
 class FloatListValidator:
-    def __init__(self, input_value: str, positive = True):
+    def __init__(self, input_value: str, max_abs_value: float, positive = True):
         self.input_value = input_value 
+        self.max_abs_value = max_abs_value 
         self.validated: list[float] = [] 
         self.positive = positive
 
@@ -70,6 +77,8 @@ class FloatListValidator:
                 v = float(el)
                 if self.positive and v <= 0:
                     return False
+                if abs(v) > self.max_abs_value:
+                    return False 
                 self.validated.append(v)
         except Exception:
             result = False

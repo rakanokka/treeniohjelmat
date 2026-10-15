@@ -5,67 +5,39 @@
 {% block content %}
 <div class="page-nav exercises-nav">
 	<ul class="no-bullets">
-		<li><a href="{{ url_for('workouts') }}">Treenit</a></li>
-		<li><a href="{{ url_for('workout_templates') }}">Treenipohjat</a></li>
-		<li><a href="{{ url_for('workouts_search') }}">Etsi treenipohjia</a></li>
+		<li><a href="{{ url_for('get_workouts') }}">Treenit</a></li>
+		<li><a href="{{ url_for('get_workout_templates') }}">Treenipohjat</a></li>
+		<li><a href="{{ url_for('get_workouts_search') }}">Etsi treenipohjia</a></li>
     </ul>
 </div>
 <div class="page-container">
-	{% if editable %}
-	<br>
-	<form action="" method="POST" class="form-stacked">
-		<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
-        <label for="name">Treenin nimi:</label>
-		<input 
-			type="text" 
-			id="name" 
-			name="name" 
-			value="{{ session.wt_edit.template.name }}" 
-			required>
-		<label for="name">Treenin kuvaus:</label>
-		<input 
-			type="text" 
-			id="desc" 
-			name="desc" 
-			value="{{ session.wt_edit.template.description or "" }}">
-		<label for="name">Treenin luokat:</label>
-        <input 
-			style="width: 300px" 
-			type="text" 
-			id="tags" 
-			name="tags" 
-			value="{{ session.wt_edit.tags | join(',') }}"
-			placeholder="Syötä pilkulla erotettuna listana...">
-        <button type="submit" class="btn">Päivitä perustiedot</button>
-		<p style="color: red">HUOM. Tämä lomake päivittää vain treenipohjan perustiedot (sessioniin, ei tietokantaan)</p>
-    </form>
-	<br>	
-	{% else %}
 	<ul>
-		<li>Treenin nimi: {{ session.wt_edit.template.name }}</li>
-		{% if session.wt_edit.template.description %}
-		<li>Treenin kuvaus: {{ session.wt_edit.template.description }}</li>
+		<li>Treenin nimi: {{ template.name }}</li>
+		{% if template.description %}
+		<li>Treenin kuvaus: {{ template.description }}</li>
 		{% else %}
 		<li>Treenin kuvaus: <i>Ei kuvausta</i></li>
 		{% endif %}
-		{% if session.wt_edit.tags %}
+		{% if tags %}
 		<li>
 			Treenin luokat:
-			{% for tag in session.wt_edit.tags %}
-			<a href="{{ url_for('workout_templates_tag', name = tag) }}">{{ tag }}</a>{% if not loop.last %}, {% endif %}
+			{% for tag in tags %}
+			<a href="{{ url_for('get_workouts_search', tag = tag) }}">{{ tag }}</a>{% if not loop.last %}, {% endif %}
 			{% endfor %}
 		</li>
 		{% else %}
 		<li>Treenin luokat: <i>Ei luokkia</i></li>
 		{% endif %}
-		<li>Luoja: {{ session.wt_edit.template.creator_name }}</li>
+		<li>Luoja: {{ template.creator_name }}</li>
 	<ul>
+	{% if template.has_previous_version %}
+	<br>
+	<a href="{{ url_for('get_exercise_template', template_id = template.id) }}">Edellinen versio</a>
 	{% endif %}
 	<br>
 	<h2>Harjoitukset</h2>
-	{% if session.wt_edit.exercises %}	
 	<div class="list-container">
-	{% for et in session.wt_edit.exercises %}	
+	{% for et in exercises %}	
 		<div class="list-item exercise-item">
 			<p class="bold-text">{{ et.name }}</p>
 			<p>{{ et.category }}</p>
@@ -77,33 +49,10 @@
 				<p class="key">Toistot:</p>	
 				<p class="value">{{ et.reps }}</p>	
 			</div>
-			{% if editable %}
-			<div class="item-extra">
-				<form action="" method="POST">
-					<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
-					<input type="hidden" name="et_index" value="{{ loop.index0 }}">	
-					<input type="hidden" name="et_remove" value="true">
-					<button type="submit" class="btn">Poista treenistä</button>
-				</form>
-			</div>
-			{% endif %}
 		</div>
 	{% endfor %}
 	</div>
-	{% else %}
-	<p>Ei harjoituksia.</p> 
 	<br>
-	{% endif %}
-	{% if editable %}
-	<a href="{{ url_for('add_workout_exercises', template_id = session.wt_edit.template.id) }}">Lisää harjoitus</a>
-	{% endif %}
-	<br>
-	<form action="" method="POST" class="form-stacked">
-		<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
-		<input type="hidden" name="wt_update" value="true">
-		<button type="submit" class="btn">Päivitä pohja</button>	
-		<p style="color: red">HUOM. Tämä painike päivittää treenipohjan tietokantaan</p>
-	</form>
 	<div class="comments-section">
 		<h3>Kommentit ({{ comments | length }})</h3>
 		<br>
@@ -117,11 +66,6 @@
 		<div class="comments-list">
 		{% for c in comments %}
 			<div class="comment-card">
-				{% if c.avatar %}
-				<div class="avatar">{{c.avatar}}</div>
-				{% else %}
-				<div class="avatar">X</div>
-				{% endif %}
 				<div class="comment-body">
 					<div class="comment-header">
 						<span class="author-name">{{ c.author_name }}</span>

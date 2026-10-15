@@ -5,46 +5,63 @@
 {% block content %}
 <div class="page-nav exercises-nav">
 	<ul class="no-bullets">
-		<li><a href="{{ url_for('exercises') }}">Harjoitukset</a></li>
-		<li><a href="{{ url_for('exercise_templates') }}">Harjoituspohjat</a></li>
+		<li><a href="{{ url_for('get_exercises') }}">Harjoitukset</a></li>
+		<li><a href="{{ url_for('get_exercise_templates') }}">Harjoituspohjat</a></li>
     </ul>
 </div>
 <div class="page-container">
 	<h2>Etsi harjoituspohjia</h2>
 	<div class="exercises-search-container ch">
-		<form action="{{ url_for('exercises_search') }}" method="GET" class="search-input">
-			<input type="text" name="query" value="{{ search_query }}">
+		<form action="{{ url_for('get_exercises_search') }}" method="GET" class="search-input">
+			<select name="type" class="search-select">
+				<option value="name" {% if search_type == 'name' %}selected{% endif %}>Nimi</option>
+				<option value="category" {% if search_type == 'category' %}selected{% endif %}>Ryhmä</option>
+			</select>
+			<input type="text" name="query" value="{{ search_query }}" placeholder="Hakusana..." required>
 			<button class="btn" type="submit">Hae</button>
 		</form>
 	</div>
+	{% if templates %}
 	<div class="list-container">
 	{% for et in templates %}	
 		<div class="list-item exercise-item">
 			<p class="bold-text">{{ et.name }}</p>
+			
+			{% if et.category %}
 			<p>{{ et.category }}</p>
+			{% else %}
+			<p class="italic-text">Ei ryhmää</p>
+			{% endif %}
+			
 			<div class="item-info-entry">
 				<p class="key">Sarjat:</p>	
 				<p class="value">{{ et.sets }}</p>	
 			</div>
+			
 			<div class="item-info-entry">
 				<p class="key">Toistot:</p>	
 				<p class="value">{{ et.reps }}</p>	
 			</div>
+			
 			<div class="item-extra">
-				{#<span>[Käyttäjien määrä]</span>#}
 				<span>
-					<a href="{{ url_for('view_exercise_template', template_id = et.id) }}">
+					<a href="{{ url_for('get_exercise_template', template_id = et.id) }}">
 						<button class="btn" type="submit">Tarkastele</button>
 					</a>	
 				</span>
+				{% if not(et.id in user_et_ids) %}
 				<form action="" method="POST">
 					<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
 					<input type="hidden" name="template_id" value="{{ et.id }}">
 					<button class="btn" type="submit">Ota käyttöön</button>
 				</form>
+				{% endif %}
 			</div>
 		</div>
 	{% endfor %}
 	</div>
+	{% elif no_search_results %}
+	<p>Ei yhtään osumaa hakusanalle "{{search_query}}"</p>
+	{% endif %}
 </div>
 {% endblock %}

@@ -5,14 +5,14 @@
 {% block content %}
 <div class="page-nav exercises-nav">
 	<ul class="no-bullets">
-		<li><a href="{{ url_for('workouts') }}">Treenit</a></li>
-		<li><a href="{{ url_for('workout_templates') }}">Treenipohjat</a></li>
-		<li><a href="{{ url_for('workouts_search') }}">Etsi treenipohjia</a></li>
+		<li><a href="{{ url_for('get_workouts') }}">Treenit</a></li>
+		<li><a href="{{ url_for('get_workout_templates') }}">Treenipohjat</a></li>
+		<li><a href="{{ url_for('get_workouts_search') }}">Etsi treenipohjia</a></li>
     </ul>
 </div>
 <div class="page-container">
 	<br>
-	<form action="" method="POST" class="form-stacked">
+	<form action="{{ url_for('post_workout_template_edit', wt_id = session.wte.template_id) }}" method="POST" class="form-stacked">
 		<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
         <label for="name">Treenin nimi:</label>
 		<input 
@@ -24,8 +24,8 @@
 		<label for="name">Treenin kuvaus:</label>
 		<input 
 			type="text" 
-			id="desc" 
-			name="desc" 
+			id="description" 
+			name="description" 
 			value="{{ session.wte.description }}">
 		<label for="name">Treenin luokat:</label>
         <input 
@@ -35,33 +35,51 @@
 			name="tags" 
 			value="{{ session.wte.tags | join(',') }}"
 			placeholder="Syötä pilkulla erotettuna listana...">
-		<br>	
-		<br>	
-		<h2>Harjoitukset</h2>
-		{% if session.wte.exercises %}	
-		<div class="list-container">
-		{% for et in session.wte.exercises %}	
-			<div class="list-item exercise-item">
-				<p class="bold-text">{{ et.name }}</p>
-				<p>{{ et.category }}</p>
-				<div class="item-info-entry">
-					<p class="key">Sarjat:</p>	
-					<p class="value">{{ et.sets }}</p>	
-				</div>
-				<div class="item-info-entry">
-					<p class="key">Toistot:</p>	
-					<p class="value">{{ et.reps }}</p>	
-				</div>
+		<input type="hidden" name="wt_edit_info" value="true">	
+		<button type="submit" class="btn">Päivitä perustiedot</button>
+	</form>
+	<br>	
+	<h2>Harjoitukset</h2>
+	{% if session.wte.exercises %}	
+	<div class="list-container">
+	{% for et in session.wte.exercises %}	
+		<div class="list-item exercise-item">
+			<p class="bold-text">{{ et.name }}</p>
+			<p>{{ et.category }}</p>
+			<div class="item-info-entry">
+				<p class="key">Sarjat:</p>	
+				<p class="value">{{ et.sets }}</p>	
 			</div>
-		{% endfor %}
+			<div class="item-info-entry">
+				<p class="key">Toistot:</p>	
+				<p class="value">{{ et.reps }}</p>	
+			</div>
+			<div class="item-extra">
+				<span>
+					<form action="{{ url_for('post_workout_template_edit', wt_id = session.wte.template_id) }}" method="POST">
+						<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
+						<input type="hidden" name="et_remove" value="true">	
+						<input type="hidden" name="et_index" value="{{ loop.index0 }}">	
+						<button type="submit" class="btn">Poista pohjasta</button>
+					</form>
+				</span>
+			</div>
 		</div>
-		{% else %}
-		<p>Ei lisättyjä harjoituksia.</p> 
-		<br>
-		{% endif %}
-		<br>
-		<input type="hidden" name="wt_submit" value="true">
+	{% endfor %}
+	</div>
+	{% else %}
+	<p>Ei lisättyjä harjoituksia.</p> 
+	<br>
+	{% endif %}
+	<br>
+	<form action="{{url_for('post_workout_template_edit', wt_id = session.wte.template_id) }}" method="POST">
+		<input type="hidden" name="wt_submit" value="true">	
+		{% if session.wte.exercises %}
+		<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
 		<button type="submit" class="btn">Päivitä</button>
+		{% else %}
+		<button type="submit" class="btn" disabled>Päivitä</button>
+		{% endif %}
 	</form>
 	<br>
 	<h2>Lisätyt harjoituspohjat</h2>
@@ -80,21 +98,13 @@
 			</div>
 			<div class="item-extra">
 				<span>
-					<form action="" method="POST">
+					<form action="{{ url_for('post_workout_template_edit', wt_id = session.wte.template_id) }}" method="POST">
 						<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
 						<input type="hidden" name="et_add" value="true">	
 						<input type="hidden" name="et_id" value="{{ et.id }}">	
 						<button type="submit" class="btn">Lisää pohjaan</button>
 					</form>
-				</span>
-				<span>
-					<form action="" method="POST">
-						<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
-						<input type="hidden" name="et_remove" value="true">	
-						<input type="hidden" name="et_id" value="{{ et.id }}">	
-						<button type="submit" class="btn">Poista pohjasta</button>
-					</form>
-				</span>
+				</span>	
 			</div>
 		</div>
 	{% endfor %}

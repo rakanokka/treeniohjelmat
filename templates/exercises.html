@@ -5,8 +5,8 @@
 {% block content %}
 <div class="page-nav exercises-nav">
 	<ul class="no-bullets">
-		<li><a href="{{ url_for('exercise_templates') }}">Harjoituspohjat</a></li>
-		<li><a href="{{ url_for('exercises_search') }}">Etsi harjoituspohjia</a></li>
+		<li><a href="{{ url_for('get_exercise_templates') }}">Harjoituspohjat</a></li>
+		<li><a href="{{ url_for('get_exercises_search') }}">Etsi harjoituspohjia</a></li>
     </ul>
 </div>
 <div class="page-container">
@@ -29,7 +29,7 @@
 					</form>
 				</span>
 				<span>
-					<a href="{{ url_for('view_exercise', exercise_id = e.id) }}">
+					<a href="{{ url_for('get_exercise', exercise_id = e.id) }}">
 						<button class="btn" type="submit">Tarkastele</button>
 					</a>	
 				</span>

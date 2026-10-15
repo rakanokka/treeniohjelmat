@@ -5,14 +5,14 @@
 {% block content %}
 <div class="page-nav exercises-nav">
 	<ul class="no-bullets">
-		<li><a href="{{ url_for('exercises') }}">Harjoitukset</a></li>
-		<li><a href="{{ url_for('exercises_search') }}">Etsi harjoituspohjia</a></li>
+		<li><a href="{{ url_for('get_exercises') }}">Harjoitukset</a></li>
+		<li><a href="{{ url_for('get_exercises_search') }}">Etsi harjoituspohjia</a></li>
     </ul>
 </div>
 <div class="page-container">
 	<h2>Luo harjoituspohja</h2>
 	<br>
-	<form action="" method="POST" class="form-stacked">
+	<form action="{{ url_for('get_exercise_templates') }}" method="POST" class="form-stacked">
 		<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
         <label for="name">Harjoituksen nimi:</label>
         <input type="text" id="name" name="name" required>
@@ -48,26 +48,26 @@
 				<span>{{ et.exercise_count }} harjoitusta</span>
 				<span>{{ et.user_count }} käyttäjää</span>
 				<span>
-					<form action="" method="POST" class="form-stacked">
+					<form action="{{ url_for('get_exercise_templates') }}" method="POST" class="form-stacked">
 						<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
 						<input type="hidden" name="template_id" value="{{ et.id }}">	
-						<input type="hidden" name="is_delete_owner_template" value="true">
+						<input type="hidden" name="et_delete_owner" value="true">
 						<button type="submit" class="btn">Poista</button>	
 					</form>
 				</span>
 				{% if et.is_root == 0 %}
 				<span>
-					<form action="" method="POST" class="form-stacked">
+					<form action="{{ url_for('get_exercise_templates') }}" method="POST" class="form-stacked">
 						<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
 						<input type="hidden" name="template_id" value="{{ et.id }}">	
-						<input type="hidden" name="is_pop_owner_template" value="true">
-						<button type="submit" class="btn">Palaa edelliseen</button>	
+						<input type="hidden" name="et_pop_owner" value="true">
+						<button type="submit" class="btn">Poista viimeisin muutos</button>	
 					</form>
 				</span>	
 				{% endif %}
 				<span>
-					<a href="{{ url_for('view_exercise_template', template_id = et.id) }}">
-						<button class="btn" type="submit">Tarkastele</button>
+					<a href="{{ url_for('get_exercise_template', template_id = et.id) }}">
+						<button class="btn" type="submit">Päivitä</button>
 					</a>	
 				</span>
 			</div>
@@ -102,19 +102,19 @@
 				<span>{{ et.exercise_count }} harjoitusta</span>
 				<span>{{ et.user_count }} käyttäjää</span>
 				<span>
-					<form action="" method="POST" class="form-stacked">
+					<form action="{{ url_for('get_exercise_templates') }}" method="POST" class="form-stacked">
 						<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
 						<input type="hidden" name="template_id" value="{{ et.id }}">	
-						<input type="hidden" name="is_delete_adopted_template" value="true">
+						<input type="hidden" name="et_delete_adopted" value="true">
 						<button type="submit" class="btn">Poista käytöstä</button>	
 					</form>
 				</span>
 				{% if et.has_next_version == 1 %}
 				<span>
-					<form action="" method="POST">
+					<form action="{{ url_for('get_exercise_templates') }}" method="POST">
 						<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
 						<input type="hidden" name="template_id" value="{{ et.id }}">
-						<input type="hidden" name="is_update_adopted_template" value="true">
+						<input type="hidden" name="et_update_adopted" value="true">
 						<label>Uudempi versio löytyy</label>
 						<button class="btn" type="submit">Päivitä seuraavaan</button>
 					</form>
@@ -122,16 +122,16 @@
 				{% endif %}
 				{% if et.is_root == 0 %}
 				<span>
-					<form action="" method="POST" class="form-stacked">
+					<form action="{{ url_for('get_exercise_templates') }}" method="POST" class="form-stacked">
 						<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
 						<input type="hidden" name="template_id" value="{{ et.id }}">	
-						<input type="hidden" name="is_pop_adopted_template" value="true">
+						<input type="hidden" name="et_pop_adopted" value="true">
 						<button type="submit" class="btn">Palaa edelliseen</button>	
 					</form>
 				</span>	
 				{% endif %}
 				<span>
-					<a href="{{ url_for('view_exercise_template', template_id = et.id) }}">
+					<a href="{{ url_for('get_exercise_template', template_id = et.id) }}">
 						<button class="btn" type="submit">Tarkastele</button>
 					</a>	
 				</span>

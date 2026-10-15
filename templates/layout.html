@@ -10,21 +10,21 @@
 
     <header>
         <nav>
-			<a href="{{ url_for('home') }}" class="logo">XFit</a>
+			<a href="{{ url_for('get_home') }}" class="logo">XFit</a>
             <ul class="no-bullets">
-				<li><a href="{{ url_for('home') }}">Etusivu</a></li>
+				<li><a href="{{ url_for('get_home') }}">Etusivu</a></li>
 				{% if session.get('user_id') %}
-				<li><a href="{{ url_for('workouts') }}">Treenit</a></li>
-				<li><a href="{{ url_for('exercises') }}">Harjoitukset</a></li>
-				<li><a href="{{ url_for('profile', user_id = session.get('user_id')) }}">Oma profiili | {{ session.get('username') }}</a></li>
-				<form class="link-button" action="{{ url_for('logout') }}" method="POST">
+				<li><a href="{{ url_for('get_workouts') }}">Treenit</a></li>
+				<li><a href="{{ url_for('get_exercises') }}">Harjoitukset</a></li>
+				<li><a href="{{ url_for('get_profile', user_id = session.get('user_id')) }}">Oma profiili | {{ session.get('username') }}</a></li>
+				<form class="link-button" action="{{ url_for('post_logout') }}" method="POST">
 					<button type="submit" class="link-button">
 						Kirjaudu ulos
 					</button>
 				</form>	
 				{% else %}
-				<li><a href="{{ url_for('login') }}">Kirjaudu</a></li>
-				<li><a href="{{ url_for('register') }}">Rekisteröidy</a></li>
+				<li><a href="{{ url_for('get_login') }}">Kirjaudu</a></li>
+				<li><a href="{{ url_for('get_register') }}">Rekisteröidy</a></li>
 				{% endif %}
             </ul>
         </nav>

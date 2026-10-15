@@ -5,51 +5,76 @@
 {% block content %}
 <div class="page-nav workouts-nav">
 	<ul class="no-bullets">
-		<li><a href="{{ url_for('workouts') }}">Treenit</a></li>
-		<li><a href="{{ url_for('workout_templates') }}">Treenipohjat</a></li>
+		<li><a href="{{ url_for('get_workouts') }}">Treenit</a></li>
+		<li><a href="{{ url_for('get_workout_templates') }}">Treenipohjat</a></li>
     </ul>
 </div>
 <div class="page-container">
 	<h2>Etsi treenipohjia</h2>
 	<div class="workouts-search-container ch">
-		<form action="{{ url_for('workouts_search') }}" method="GET" class="search-input">
-			<input type="text" name="query" value="{{ search_query }}">
+		<form action="{{ url_for('get_workouts_search') }}" method="GET" class="search-input">
+			<select name="type" class="search-select">
+				<option value="name" {% if search_type == 'name' %}selected{% endif %}>Nimi</option>
+				<option value="tag" {% if search_type == 'tag' %}selected{% endif %}>Luokka</option>
+				<option value="category" {% if search_type == 'category' %}selected{% endif %}>Ryhmä</option>
+			</select>
+			<input type="text" name="query" value="{{ search_query }}" placeholder="Hakusana..." required>
 			<button class="btn" type="submit">Hae</button>
 		</form>
 	</div>
+	{% if templates %}
 	<div class="list-container">
 	{% for wt in templates %}
-		{% set wt_tags = tags.get(wt.id, []) %}
+		{% set categories_list = categories.get(wt.id, []) %}
+		{% set tags_list = tags.get(wt.id, []) %}
 		<div class="list-item workout-item">
 			<p class="bold-text">{{ wt.name }}</p>
-			{% if wt_tags %}
-			<p>{{ wt_tags | join(", ") }}</p>
+
+			{% if categories_list %}
+			<p>{{ categories_list | join(", ") }}</p>
+			{% else %}
+			<p class="italic-text">Ei ryhmiä</p>
+			{% endif %}
+
+			{% if tags_list %}
+			<p>
+				{% for tag in tags_list %}
+				<a href="{{ url_for('get_workouts_search', tag = tag) }}">{{ tag }}</a>{% if not loop.last %}, {% endif %}
+				{% endfor %}
+			</p>
 			{% else %}
 			<p class="italic-text">Ei luokkia</p>
 			{% endif %}
+			
 			{% if wt.description %}
 			<p>{{ wt.description }}</p>
 			{% else %}
 			<p class="italic-text">Ei kuvausta</p>
 			{% endif %}
+			
 			<div class="item-info-entry">
 				<p class="key">Liikkeitä:</p>	
 				<p class="value">{{ wt.exercise_count }}</p>
 			</div>
 			<div class="item-extra">
 				<span>
-					<a href="{{ url_for('view_workout_template', template_id = wt.id) }}">
+					<a href="{{ url_for('get_workout_template', template_id = wt.id) }}">
 						<button class="btn" type="submit">Tarkastele</button>
 					</a>	
 				</span>
+				{% if not(wt.id in user_wt_ids) %}
 				<form action="" method="POST">
 					<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
 					<input type="hidden" name="template_id" value="{{ wt.id }}">
 					<button class="btn" type="submit">Ota käyttöön</button>
 				</form>
+				{% endif %}
 			</div>
 		</div>
 	{% endfor %}
 	</div>
+	{% elif no_search_results %}
+		<p>Ei yhtään osumaa hakusanalle "{{search_query}}"</p>
+	{% endif %}
 </div>
 {% endblock %}

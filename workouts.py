@@ -4,9 +4,11 @@ def add_my_workout_template(user_id: int, name: str, description: str, tags: lis
     connection = database.get_connection()
     if not connection:
         return False
+    if not exercise_ids:
+        # Empty workouts not allowed
+        return False
     try:
         with connection:
-            # BEGIN TRANSACTION
             sql = "INSERT INTO workout_template (creator_id, name, description) VALUES (?, ?, ?)"
             c = connection.execute(sql, [
                 user_id, 
@@ -33,11 +35,9 @@ def add_my_workout_template(user_id: int, name: str, description: str, tags: lis
                 """
             for order_index, exercise_id in enumerate(exercise_ids):    
                 connection.execute(sql, [template_id, exercise_id, order_index])
-            # COMMIT
         return True
     except Exception as e:
-        print(str(e))
-        # ROLLBACK
+        print(f"SQLite Error: {e}")
         return False
     finally:
         connection.close()
@@ -55,7 +55,12 @@ def add_workout_log(user_id: int, workout_template_id: int, name: str, descripti
     INSERT INTO workout_log (user_id, workout_template_id, name, notes, started_at)
     VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
     """
-    return database.execute(sql, [user_id, workout_template_id, name.strip(), description.strip() or None])
+    return database.execute(sql, [
+        user_id, 
+        workout_template_id, 
+        name.strip(), 
+        description.strip() or None
+    ])
 
 def add_exercise_to_workout(user_id: int, workout_template_id: int, exercise_template_id: int) -> bool:
     sql = """
@@ -89,7 +94,6 @@ def add_exercise_to_workout_log(workout_id: int, exercise_template_id: int, name
         return False
     try:
         with connection:
-            # BEGIN TRANSACTION
             sql = """
             INSERT INTO exercise_log (workout_id, exercise_template_id, name)
             VALUES (?, ?, ?)
@@ -107,11 +111,9 @@ def add_exercise_to_workout_log(workout_id: int, exercise_template_id: int, name
             """
             for order_index, (rep, weight) in enumerate(zip(reps, weights)):
                 connection.execute(sql, [exercise_id, order_index, rep, weight])
-            # COMMIT
         return True
     except Exception as e:
-        print(str(e))
-        # ROLLBACK
+        print(f"SQLite Error: {e}")
         return False
     finally:
         connection.close()
@@ -174,7 +176,26 @@ def get_workout_template_comments(template_id: int) -> list[dict]:
     """
     return database.query(sql, [template_id])
 
-def get_workout_template_exercises(user_id: int, workout_template_id: int) -> list[dict]:
+def get_workout_template_exercises(workout_template_id: int) -> list[dict]:
+    sql = """
+    SELECT 
+        wet.id AS id,
+        wet.workout_template_id AS workout_template_id,
+        wet.exercise_template_id AS exercise_template_id,
+        wet.order_index AS order_index,
+        et.name AS name,
+        et.category AS category,
+        et.target_sets AS sets,
+        et.target_reps AS reps
+    FROM workout_exercise_template wet
+    JOIN exercise_template et 
+        ON wet.exercise_template_id = et.id
+    WHERE wet.workout_template_id = ?
+    ORDER BY wet.order_index ASC, wet.id ASC
+    """
+    return database.query(sql, [workout_template_id])
+
+def get_user_workout_template_exercises(user_id: int, workout_template_id: int) -> list[dict]:
     sql = """
     SELECT 
         wet.id AS id,
@@ -267,40 +288,6 @@ def get_workout_templates(user_id: int) -> list[dict]:
     """
     return database.query(sql, [user_id, user_id])
 
-def get_workout_templates_OLD(user_id: int) -> list[dict]:
-    sql = """
-    SELECT 
-        wt.id AS id,
-        wt.creator_id AS creator_id,
-        wt.name AS name,
-        wt.description AS description,
-        u.username AS creator_name,
-        GROUP_CONCAT(DISTINCT et.category) AS categories,
-        GROUP_CONCAT(DISTINCT t.name) AS tags, 
-        COUNT(DISTINCT wet.id) AS exercise_count,
-        COUNT(DISTINCT w.id) AS workout_count,
-        COUNT(DISTINCT uwt.user_id) AS user_count
-    FROM workout_template wt
-    JOIN "user" u 
-        ON wt.creator_id = u.id
-    LEFT JOIN workout_exercise_template wet 
-        ON wt.id = wet.workout_template_id
-    LEFT JOIN exercise_template et 
-        ON wet.exercise_template_id = et.id
-    LEFT JOIN user_workout_template uwt 
-        ON wt.id = uwt.workout_template_id
-    LEFT JOIN workout_log w 
-        ON wt.id = w.workout_template_id AND w.user_id = ? 
-    LEFT JOIN workout_template_tag wtt 
-        ON wt.id = wtt.workout_template_id 
-    LEFT JOIN tag t 
-        ON wtt.tag_id = t.id 
-    WHERE wt.creator_id = ?
-    GROUP BY wt.id
-    ORDER BY wt.name ASC
-    """
-    return database.query(sql, [user_id, user_id])
-
 def get_adopted_workout_templates(user_id: int) -> list[dict]:
     sql = """
     SELECT 
@@ -344,81 +331,43 @@ def get_adopted_workout_templates(user_id: int) -> list[dict]:
     """
     return database.query(sql, [user_id, user_id])
 
-def get_adopted_workout_templates_OLD(user_id: int) -> list[dict]:
+def find_workout_templates_by_tag(tag: str) -> list[dict]:
     sql = """
     SELECT 
         wt.id AS id,
-        wt.creator_id AS creator_id,
         wt.name AS name,
         wt.description AS description,
+        wt.creator_id AS creator_id,
         u.username AS creator_name,
-        GROUP_CONCAT(DISTINCT et.category) AS categories,
-        COUNT(DISTINCT wet.id) AS exercise_count,
         GROUP_CONCAT(DISTINCT t.name) AS tags,
-        COUNT(DISTINCT w.id) AS workout_count,
-        COUNT(DISTINCT uwt_all.user_id) AS user_count
-    FROM user_workout_template uwt_my
-    JOIN workout_template wt 
-        ON uwt_my.workout_template_id = wt.id
+        GROUP_CONCAT(DISTINCT et.category) AS categories,
+        (SELECT COUNT(*) 
+         FROM workout_exercise_template wet 
+         WHERE wet.workout_template_id = wt.id) AS exercise_count
+    FROM workout_template wt
     JOIN "user" u 
         ON wt.creator_id = u.id
-    LEFT JOIN user_workout_template uwt_all 
-        ON wt.id = uwt_all.workout_template_id
-    LEFT JOIN workout_exercise_template wet 
-        ON wt.id = wet.workout_template_id
-    LEFT JOIN exercise_template et 
-        ON wet.exercise_template_id = et.id
-    LEFT JOIN workout_log w 
-        ON wt.id = w.workout_template_id AND w.user_id = ?
     LEFT JOIN workout_template_tag wtt 
         ON wt.id = wtt.workout_template_id 
     LEFT JOIN tag t 
         ON wtt.tag_id = t.id 
-    WHERE uwt_my.user_id = ?
-    GROUP BY wt.id
-    ORDER BY wt.name ASC
-    """
-    return database.query(sql, [user_id, user_id])
-
-def find_workout_templates_by_tag(tag: str, user_id: int) -> list[dict]:
-    sql = """
-    SELECT 
-        wt.id AS id,
-        wt.name AS name,
-        wt.description AS description,
-        wt.creator_id AS creator_id,
-        u.username AS creator_name,
-        GROUP_CONCAT(DISTINCT et.category) AS categories,
-        GROUP_CONCAT(DISTINCT t_all.name) AS tags,
-        COUNT(DISTINCT wet.id) AS exercise_count,
-        COUNT(DISTINCT w.id) AS workout_count,
-        COUNT(DISTINCT uwt_all.user_id) AS user_count
-    FROM workout_template wt
-    JOIN "user" u 
-        ON wt.creator_id = u.id
-    JOIN workout_template_tag wtt_filter 
-        ON wt.id = wtt_filter.workout_template_id
-    JOIN tag t_filter 
-        ON wtt_filter.tag_id = t_filter.id
-    LEFT JOIN workout_template_tag wtt_all 
-        ON wt.id = wtt_all.workout_template_id
-    LEFT JOIN tag t_all 
-        ON wtt_all.tag_id = t_all.id
     LEFT JOIN workout_exercise_template wet 
         ON wt.id = wet.workout_template_id
     LEFT JOIN exercise_template et 
         ON wet.exercise_template_id = et.id
-    LEFT JOIN user_workout_template uwt_all 
-        ON wt.id = uwt_all.workout_template_id
-    LEFT JOIN workout_log w 
-        ON wt.id = w.workout_template_id AND w.user_id = ?
-    WHERE LOWER(t_filter.name) = LOWER(?)
+    WHERE wt.next_version_id IS NULL 
+        AND wt.id IN (
+            SELECT wtt2.workout_template_id 
+            FROM workout_template_tag wtt2 
+            JOIN tag t2 ON wtt2.tag_id = t2.id 
+            WHERE LOWER(t2.name) LIKE LOWER(?)
+        )
     GROUP BY wt.id
-    ORDER BY wt.name ASC
+    ORDER BY wt.name ASC 
     """
-    return database.query(sql, [user_id, tag.strip()]) 
+    return database.query(sql, [f"%{tag.strip()}%"])
 
-def find_workout_templates_by_name(name: str, user_id: int) -> list[dict]:
+def find_workout_templates_by_tag_OLD(tag: str) -> list[dict]:
     sql = """
     SELECT 
         wt.id AS id,
@@ -428,24 +377,159 @@ def find_workout_templates_by_name(name: str, user_id: int) -> list[dict]:
         u.username AS creator_name,
         GROUP_CONCAT(DISTINCT t.name) AS tags,
         (SELECT COUNT(*) 
-        FROM workout_exercise_template wet 
-        WHERE wet.workout_template_id = wt.id) AS exercise_count
+         FROM workout_exercise_template wet 
+         WHERE wet.workout_template_id = wt.id) AS exercise_count
     FROM workout_template wt
     JOIN "user" u 
         ON wt.creator_id = u.id
-    LEFT JOIN user_workout_template uwt 
-        ON wt.id = uwt.workout_template_id AND uwt.user_id = ?
     LEFT JOIN workout_template_tag wtt 
         ON wt.id = wtt.workout_template_id 
     LEFT JOIN tag t 
         ON wtt.tag_id = t.id 
-    WHERE wt.creator_id != ? 
-        AND uwt.workout_template_id IS NULL 
+    WHERE wt.next_version_id IS NULL 
+        AND wt.id IN (
+            SELECT wtt2.workout_template_id 
+            FROM workout_template_tag wtt2 
+            JOIN tag t2 ON wtt2.tag_id = t2.id 
+            WHERE LOWER(t2.name) LIKE LOWER(?)
+        )
+    GROUP BY wt.id
+    ORDER BY wt.name ASC 
+    """
+    return database.query(sql, [f"%{tag.strip()}%"])
+
+def find_workout_templates_by_category(category: str) -> list[dict]:
+    sql = """
+    SELECT 
+        wt.id AS id,
+        wt.name AS name,
+        wt.description AS description,
+        wt.creator_id AS creator_id,
+        u.username AS creator_name,
+        GROUP_CONCAT(DISTINCT t.name) AS tags,
+        GROUP_CONCAT(DISTINCT et.category) AS categories,
+        (SELECT COUNT(*) 
+         FROM workout_exercise_template wet 
+         WHERE wet.workout_template_id = wt.id) AS exercise_count
+    FROM workout_template wt
+    JOIN "user" u 
+        ON wt.creator_id = u.id
+    LEFT JOIN workout_template_tag wtt 
+        ON wt.id = wtt.workout_template_id 
+    LEFT JOIN tag t 
+        ON wtt.tag_id = t.id 
+    LEFT JOIN workout_exercise_template wet 
+        ON wt.id = wet.workout_template_id
+    LEFT JOIN exercise_template et 
+        ON wet.exercise_template_id = et.id
+    WHERE wt.next_version_id IS NULL 
+        AND wt.id IN (
+            SELECT wet2.workout_template_id 
+            FROM workout_exercise_template wet2
+            JOIN exercise_template et2 ON wet2.exercise_template_id = et2.id
+            WHERE LOWER(et2.category) LIKE LOWER(?)
+        )
+    GROUP BY wt.id
+    ORDER BY wt.name ASC 
+    """
+    return database.query(sql, [f"%{category.strip()}%"])
+
+def find_workout_templates_by_category_OLD(category: str) -> list[dict]:
+    sql = """
+    SELECT 
+        wt.id AS id,
+        wt.name AS name,
+        wt.description AS description,
+        wt.creator_id AS creator_id,
+        u.username AS creator_name,
+        GROUP_CONCAT(DISTINCT t.name) AS tags,
+        (SELECT COUNT(*) 
+         FROM workout_exercise_template wet 
+         WHERE wet.workout_template_id = wt.id) AS exercise_count
+    FROM workout_template wt
+    JOIN "user" u 
+        ON wt.creator_id = u.id
+    LEFT JOIN workout_template_tag wtt 
+        ON wt.id = wtt.workout_template_id 
+    LEFT JOIN tag t 
+        ON wtt.tag_id = t.id 
+    WHERE wt.next_version_id IS NULL 
+        AND wt.id IN (
+            SELECT wet2.workout_template_id 
+            FROM workout_exercise_template wet2
+            JOIN exercise_template et2 ON wet2.exercise_template_id = et2.id
+            WHERE LOWER(et2.category) LIKE LOWER(?)
+        )
+    GROUP BY wt.id
+    ORDER BY wt.name ASC 
+    """
+    return database.query(sql, [f"%{category.strip()}%"])
+
+def find_workout_templates_by_name(name: str) -> list[dict]:
+    sql = """
+    SELECT 
+        wt.id AS id,
+        wt.name AS name,
+        wt.description AS description,
+        wt.creator_id AS creator_id,
+        u.username AS creator_name,
+        GROUP_CONCAT(DISTINCT t.name) AS tags,
+        GROUP_CONCAT(DISTINCT et.category) AS categories,
+        (SELECT COUNT(*) 
+         FROM workout_exercise_template wet 
+         WHERE wet.workout_template_id = wt.id) AS exercise_count
+    FROM workout_template wt
+    JOIN "user" u 
+        ON wt.creator_id = u.id
+    LEFT JOIN workout_template_tag wtt 
+        ON wt.id = wtt.workout_template_id 
+    LEFT JOIN tag t 
+        ON wtt.tag_id = t.id 
+    LEFT JOIN workout_exercise_template wet 
+        ON wt.id = wet.workout_template_id
+    LEFT JOIN exercise_template et 
+        ON wet.exercise_template_id = et.id
+    WHERE wt.next_version_id IS NULL 
         AND LOWER(wt.name) LIKE LOWER(?)
     GROUP BY wt.id
     ORDER BY wt.name ASC 
     """
-    return database.query(sql, [user_id, user_id, f"%{name.strip()}%"])
+    return database.query(sql, [f"%{name.strip()}%"])
+
+def find_workout_templates_by_name_OLD(name: str) -> list[dict]:
+    sql = """
+    SELECT 
+        wt.id AS id,
+        wt.name AS name,
+        wt.description AS description,
+        wt.creator_id AS creator_id,
+        u.username AS creator_name,
+        GROUP_CONCAT(DISTINCT t.name) AS tags,
+        (SELECT COUNT(*) 
+         FROM workout_exercise_template wet 
+         WHERE wet.workout_template_id = wt.id) AS exercise_count
+    FROM workout_template wt
+    JOIN "user" u 
+        ON wt.creator_id = u.id
+    LEFT JOIN workout_template_tag wtt 
+        ON wt.id = wtt.workout_template_id 
+    LEFT JOIN tag t 
+        ON wtt.tag_id = t.id 
+    WHERE wt.next_version_id IS NULL 
+        AND LOWER(wt.name) LIKE LOWER(?)
+    GROUP BY wt.id
+    ORDER BY wt.name ASC 
+    """
+    return database.query(sql, [f"%{name.strip()}%"])
+
+def get_all_workout_template_ids(user_id: int) -> list[int]:
+    sql = """
+    SELECT id FROM workout_template WHERE creator_id = ?
+    UNION
+    SELECT workout_template_id AS id FROM user_workout_template WHERE user_id = ?
+    """
+    rows = database.query(sql, [user_id, user_id])
+    return [row["id"] for row in rows]
 
 def get_workout_template_name(template_id: int) -> str | None:
     sql = "SELECT name FROM workout_template WHERE id = ?"
@@ -533,7 +617,6 @@ def update_my_workout_template(user_id: int, template_id: int, name: str, descri
     root_id = r[0]["root_id"]
     try:
         with connection:
-            # BEGIN TRANSACTION
             sql = """
             INSERT INTO workout_template (creator_id, root_id, name, description)
             VALUES (?, ?, ?, ?)
@@ -572,95 +655,9 @@ def update_my_workout_template(user_id: int, template_id: int, name: str, descri
             """
             for order_index, exercise_template_id in enumerate(exercise_template_ids):    
                 connection.execute(sql, [next_version_id, exercise_template_id, order_index])    
-            # COMMIT
         return True
     except Exception as e:
-        print(str(e))
-        # ROLLBACK
-        return False
-    finally:
-        connection.close()
-
-def update_workout_template_OLD(user_id: int, template_id: int, name: str, description: str, tags: list[str]) -> bool:
-    connection = database.get_connection()
-    if not connection:
-        return False
-    sql = "SELECT root_id FROM workout_template WHERE id = ? AND creator_id = ?"
-    r = database.query_with(connection, sql, [template_id, user_id])
-    if not r:
-        return False
-    root_id = r[0]["root_id"]
-    try:
-        with connection:
-            # BEGIN TRANSACTION 
-            sql = """
-            INSERT INTO workout_template (creator_id, root_id, name, description)
-            VALUES (?, ?, ?, ?)
-            """
-            c = connection.execute(sql, [
-                user_id,
-                root_id,
-                name.strip(),
-                description.strip() or None
-            ])
-            next_version_id = c.lastrowid 
-            if not next_version_id:
-                # Must check this since next_version_id is NULLABLE in database
-                raise RuntimeError(f"SQL did not execute: c.lastrowid is None\n{sql}")
-
-            sql = """
-            UPDATE workout_template
-            SET next_version_id = ?
-            WHERE id = ?
-            """
-            connection.execute(sql, [next_version_id, template_id])
-            
-            sql = "DELETE FROM workout_template_tag WHERE workout_template_id = ?"
-            connection.execute(sql, [template_id])
-            for tag in tags:
-                sql = "INSERT OR IGNORE INTO tag (name) VALUES (?)"
-                connection.execute(sql, [tag])
-                sql = """
-                INSERT INTO workout_template_tag (workout_template_id, tag_id)
-                VALUES (?, (SELECT id FROM tag WHERE name = ?))
-                """
-                connection.execute(sql, [template_id, tag])
-            # COMMIT
-        return True
-    except Exception as e:
-        print(str(e))
-        # ROLLBACK
-        return False
-    finally:
-        connection.close()
-
-def update_workout_template_exercises_OLD(user_id: int, workout_template_id: int, exercise_template_ids: list[int]) -> bool:
-    connection = database.get_connection()
-    if not connection:
-        return False
-    sql = "SELECT id FROM workout_template WHERE id = ? AND creator_id = ?"
-    r = database.query_with(connection, sql, [workout_template_id, user_id])
-    if not r:
-        connection.close()
-        return False
-    try:
-        with connection:
-            # BEGIN TRANSACTION 
-            sql = "DELETE FROM workout_exercise_template WHERE workout_template_id = ?"
-            connection.execute(sql, [workout_template_id])
-
-            for order_index, exercise_template_id in enumerate(exercise_template_ids):
-                sql = """
-                INSERT INTO workout_exercise_template 
-                (workout_template_id, exercise_template_id, order_index)
-                VALUES (?, ?, ?)
-                """
-                connection.execute(sql, [workout_template_id, exercise_template_id, order_index])
-            # COMMIT 
-        return True
-    except Exception as e:
-        print(str(e))
-        # ROLLBACK
+        print(f"SQLite Error: {e}")
         return False
     finally:
         connection.close()
@@ -693,7 +690,6 @@ def delete_my_workout_template_latest_version(user_id: int, template_id: int) ->
     prev_template_id = r[0]["id"]
     try:
         with connection:
-            # BEGIN TRANSACTION
             sql = """
             UPDATE user_workout_template 
             SET workout_template_id = ? 
@@ -706,11 +702,9 @@ def delete_my_workout_template_latest_version(user_id: int, template_id: int) ->
             
             sql = "DELETE FROM workout_template WHERE id = ?"
             connection.execute(sql, [template_id])
-            # COMMIT
         return True
     except Exception as e:
-        print(str(e))
-        # ROLLBACK
+        print(f"SQLite Error: {e}")
         return False
     finally:
         connection.close()

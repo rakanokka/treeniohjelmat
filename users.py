@@ -7,7 +7,7 @@ def add_user(username: str, email: str, password: str) -> bool:
         sql = 'INSERT INTO "user" (username, email, password_hash) VALUES (?, ?, ?)'
         database.execute(sql, [username.strip(), email.strip(), pw_hash])
     except Exception as e:
-        print(str(e))
+        print(f"SQLite Error: {e}")
         return False
     return True
 

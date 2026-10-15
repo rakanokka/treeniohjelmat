@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+
+{% block title %}Harjoitukset &ndash; XFit{% endblock %}
+
+{% block content %}
+<div class="page-nav exercises-nav">
+	<ul class="no-bullets">
+		<li><a href="{{ url_for('get_exercises') }}">Harjoitukset</a></li>
+		<li><a href="{{ url_for('get_exercise_templates') }}">Harjoituspohjat</a></li>
+		<li><a href="{{ url_for('get_exercises_search') }}">Etsi harjoituspohjia</a></li>
+    </ul>
+</div>
+<div class="page-container">	
+	<h2>Muokkaa harjoituspohjaa</h2>
+	<form action="{{ url_for('post_edit_exercise_template', template_id = template.id) }}" method="POST" class="form-stacked">
+		<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
+        <label for="name">Harjoituksen nimi:</label>
+		<input type="text" id="name" name="name" value="{{ template.name }}" required>
+		<label for="category">Liikeryhmä:</label>
+        <input type="text" id="category" name="category" value="{{ template.category or "" }}">
+		<label for="target_sets">Sarjatavoite:</label>
+		<input type="number" id="target_sets" name="target_sets" min="1" value="{{ template.sets }}" required>
+        <label for="target_reps">Toistotavoite:</label>
+		<input type="number" id="target_reps" name="target_reps" min="1" value="{{ template.reps }}" required>
+        <button type="submit" class="btn">Päivitä</button>	
+    </form>
+	{% if template.has_previous_version %}
+	<br>
+	<a href="{{ url_for('get_exercise_template', template_id = template.id) }}">Edellinen versio</a>
+	{% endif %}
+</div>
+{% endblock %}
