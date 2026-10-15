@@ -14,15 +14,26 @@
 	<br>
 	<form action="{{ url_for('get_exercise_templates') }}" method="POST" class="form-stacked">
 		<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
-        <label for="name">Harjoituksen nimi:</label>
-        <input type="text" id="name" name="name" required>
+        <label for="name">Harjoituksen nimi:</label> 
+		<input type="text" id="name" name="name" required>
+		
 		<label for="category">Liikeryhmä:</label>
         <input type="text" id="category" name="category">
+
+		<label for="difficulty">Vaikeustaso:</label>
+		<select id="difficulty" name="difficulty">
+			<option value="BEGINNER">Aloittelija</option>
+			<option value="INTERMEDIATE" selected>Keskitaso</option>
+			<option value="ADVANCED">Edistynyt</option>
+		</select>
+
 		<label for="target_sets">Sarjatavoite:</label>
 		<input type="number" id="target_sets" name="target_sets" min="1" value="3" required>
-        <label for="target_reps">Toistotavoite:</label>
-        <input type="number" id="target_reps" name="target_reps" min="1" value="10" required>
-        <button type="submit" class="btn">Luo</button>
+        
+		<label for="target_reps">Toistotavoite:</label>
+		<input type="number" id="target_reps" name="target_reps" min="1" value="10" required>
+        
+		<button type="submit" class="btn">Luo</button>
     </form>
 	<br>
 	<h2>Luodut pohjat</h2>
@@ -31,19 +42,28 @@
 	{% for et in my_templates %}	
 		<div class="list-item exercise-item">
 			<p class="bold-text">{{ et.name }}</p>
+			
 			{% if et.category %}
 			<p>{{ et.category }}</p>
 			{% else %}
 			<p class="italic-text">Ei ryhmää</p>
 			{% endif %}
+		
 			<div class="item-info-entry">
 				<p class="key">Sarjat:</p>	
 				<p class="value">{{ et.sets }}</p>	
 			</div>
+			
 			<div class="item-info-entry">
 				<p class="key">Toistot:</p>	
 				<p class="value">{{ et.reps }}</p>	
 			</div>
+			
+			<div class="item-info-entry">
+				<p class="key">Vaikeustaso:</p>	
+				<p class="value">{{ difficulty_map[et.difficulty] }}</p>
+			</div>
+			
 			<div class="item-extra">
 				<span>{{ et.exercise_count }} harjoitusta</span>
 				<span>{{ et.user_count }} käyttäjää</span>
@@ -66,7 +86,7 @@
 				</span>	
 				{% endif %}
 				<span>
-					<a href="{{ url_for('get_exercise_template', template_id = et.id) }}">
+					<a href="{{ url_for('get_edit_exercise_template', template_id = et.id) }}">
 						<button class="btn" type="submit">Päivitä</button>
 					</a>	
 				</span>
@@ -85,19 +105,28 @@
 	{% for et in adopted_templates %}	
 		<div class="list-item exercise-item">
 			<p class="bold-text">{{ et.name }}</p>
+			
 			{% if et.category %}
 			<p>{{ et.category }}</p>
 			{% else %}
 			<p class="italic-text">Ei ryhmää</p>
 			{% endif %}
+			
 			<div class="item-info-entry">
 				<p class="key">Sarjat:</p>	
 				<p class="value">{{ et.sets }}</p>	
 			</div>
+			
 			<div class="item-info-entry">
 				<p class="key">Toistot:</p>	
 				<p class="value">{{ et.reps }}</p>	
 			</div>
+		
+			<div class="item-info-entry">
+				<p class="key">Vaikeustaso:</p>	
+				<p class="value">{{ difficulty_map[et.difficulty] }}</p>
+			</div>
+
 			<div class="item-extra">
 				<span>{{ et.exercise_count }} harjoitusta</span>
 				<span>{{ et.user_count }} käyttäjää</span>

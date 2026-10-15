@@ -36,6 +36,12 @@ ERROR_MESSAGES = {
     INTERNAL_SERVER_ERROR: "Palvelimella tapahtui odottamaton virhe. Yritä hetken kuluttua uudelleen."
 }
 
+DIFFICULTY_MAP = {
+    "BEGINNER": "Aloittelija",
+    "INTERMEDIATE": "Keskitaso",
+    "ADVANCED": "Edistynyt"
+}
+
 MAX_INPUT_LENGTH = 100
 MAX_COMMENT_LENGTH = 1000
 MAX_TAG_LENGTH = 50
@@ -185,12 +191,14 @@ class ExerciseTemplateFormData(NamedTuple):
     error_messages: list[str]
     name: str
     category: str
+    difficulty: str
     sets: int
     reps: int
 
 def validate_exercise_template_form() -> ExerciseTemplateFormData:
     error_messages: list[str] = []
     name = request.form.get("name", "").strip()
+    difficulty = request.form.get("difficulty", "INTERMEDIATE")
     if not name:
         error_messages.append("Harjoituksella on oltava nimi")
     elif len(name) > MAX_INPUT_LENGTH:
@@ -206,7 +214,8 @@ def validate_exercise_template_form() -> ExerciseTemplateFormData:
         error_messages.append(f"Sarjojen määrän on oltava kokonaisluku välillä 0 < sarjat < {MAX_SETS + 1}")
     if not rv.validate():
         error_messages.append(f"Toistojen määrän on oltava kokonaisluku välillä 0 < toistot < {MAX_REPS + 1}")
-    return ExerciseTemplateFormData(error_messages, name, category, sv.get(), rv.get())
+    
+    return ExerciseTemplateFormData(error_messages, name, category, difficulty, sv.get(), rv.get())
 
 # Routes /exercises
 
@@ -255,9 +264,10 @@ def get_exercise_templates() -> str | Any:
         return error_page(UNAUTHORIZED)
     my_exercises = exercises.get_exercise_templates(user_id)
     adopted_exercises = exercises.get_adopted_exercise_templates(user_id)
-    return render_template("exercise-templates.html", 
+    return render_template("exercise-templates.html",
                            my_templates = my_exercises,
-                           adopted_templates = adopted_exercises)
+                           adopted_templates = adopted_exercises,
+                           difficulty_map = DIFFICULTY_MAP)
 
 @app.route("/exercises/templates", methods = ["POST"])
 def post_exercise_templates() -> str | Any:
@@ -307,7 +317,13 @@ def post_exercise_templates() -> str | Any:
     if data.error_messages:
         push_error_messages(data.error_messages)
     else:
-        exercises.add_my_exercise_template(user_id, data.name, data.category, data.sets, data.reps)
+        exercises.add_my_exercise_template(
+                user_id, 
+                data.name, 
+                data.category, 
+                data.difficulty, 
+                data.sets, 
+                data.reps)
     return redirect(url_for("get_exercise_templates"))
 
 # Routes /exercises/templates/<id>
@@ -322,6 +338,7 @@ def get_exercise_template(template_id: int) -> str:
     comments = exercises.get_excercise_template_comments(template_id)
     return render_template("exercise-template.html",
                            template = template,
+                           difficulty_map = DIFFICULTY_MAP,
                            comments = comments)
 
 @app.route("/exercises/templates/<int:template_id>", methods = ["POST"])
@@ -362,9 +379,10 @@ def post_edit_exercise_template(template_id: int) -> Any:
     data = validate_exercise_template_form()
     if data.error_messages:
         push_error_messages(data.error_messages)
-    else:
-        exercises.update_exercise_template(user_id, template_id, data.name, data.category, data.sets, data.reps)
-    redirect(url_for("get_edit_exercise_template", template_id = template_id)) 
+        return redirect(url_for("get_edit_exercise_templates", template_id = template_id)) 
+        
+    exercises.update_exercise_template(user_id, template_id, data.name, data.category, data.difficulty, data.sets, data.reps)
+    return redirect(url_for("get_exercise_templates")) 
     
 # Routes /exercises/templates/search
 
@@ -381,6 +399,7 @@ def find_exercise_templates_by(user_id: int, search_type: str, search_query: str
                            search_query = search_query,
                            no_search_results = len(templates) == 0,
                            templates = templates,
+                           difficulty_map = DIFFICULTY_MAP,
                            user_et_ids = set(user_et_ids))
 
 @app.route("/exercises/search")

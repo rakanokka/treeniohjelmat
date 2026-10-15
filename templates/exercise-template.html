@@ -11,32 +11,13 @@
     </ul>
 </div>
 <div class="page-container">	
-	{% if editable %}
-	<h2>Muokkaa harjoituspohjaa</h2>
-	<form action="{{ url_for('get_exercise_template', template_id = template.id) }}" method="POST" class="form-stacked">
-		<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
-        <label for="name">Harjoituksen nimi:</label>
-		<input type="text" id="name" name="name" value="{{ template.name }}" required>
-		<label for="category">Liikeryhmä:</label>
-        <input type="text" id="category" name="category" value="{{ template.category or "" }}">
-		<label for="target_sets">Sarjatavoite:</label>
-		<input type="number" id="target_sets" name="target_sets" min="1" value="{{ template.sets }}" required>
-        <label for="target_reps">Toistotavoite:</label>
-		<input type="number" id="target_reps" name="target_reps" min="1" value="{{ template.reps }}" required>
-        <button type="submit" class="btn">Päivitä</button>	
-    </form>
-	<br>
-	{% endif %}
 	<h2>Harjoituspohja tiedot</h2>
-	{% if template.has_previous_version %}
-	<a href="{{ url_for('get_exercise_template', template_id = template.id, get_previous = "true") }}">Edellinen versio</a>
-	<br>
-	{% endif %}
 	<ul>
 		<li>Harjoitus: {{ template.name }}</li>
 		{% if template.category %}
 		<li>Liikeryhmä: {{ template.category }}</li>
 		{% endif %}
+		<li>Vaikeustaso: {{ difficulty_map[template.difficulty] }}</li>
 		<li>Sarjatavoite: {{ template.sets }}</li>
 		<li>Toistotavoite: {{ template.reps }}</li>
 		<li>Luoja: {{ template.creator_name }}</li>

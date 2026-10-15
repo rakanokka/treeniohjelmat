@@ -43,6 +43,11 @@
 				<p class="value">{{ et.reps }}</p>	
 			</div>
 			
+			<div class="item-info-entry">
+				<p class="key">Vaikeustaso:</p>	
+				<p class="value">{{ difficulty_map[et.difficulty] }}</p>
+			</div>		
+			
 			<div class="item-extra">
 				<span>
 					<a href="{{ url_for('get_exercise_template', template_id = et.id) }}">

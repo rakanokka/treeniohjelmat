@@ -1,14 +1,15 @@
 import database
 
-def add_my_exercise_template(user_id: int, name: str, category: str, target_sets: int, target_reps: int):
+def add_my_exercise_template(user_id: int, name: str, category: str, difficulty: str, target_sets: int, target_reps: int):
     sql = """
-    INSERT INTO exercise_template (creator_id, name, category, target_sets, target_reps)
-    VALUES (?, ?, ?, ?, ?) 
+    INSERT INTO exercise_template (creator_id, name, category, difficulty, target_sets, target_reps)
+    VALUES (?, ?, ?, ?, ?, ?) 
     """
     template_id = database.execute_insert(sql, [
         user_id, 
         name.strip(), 
         category.strip() or None, 
+        difficulty, 
         target_sets, 
         target_reps
     ])
@@ -61,6 +62,7 @@ def get_exercise_template(template_id: int) -> dict | None:
         et.id AS id,
         et.name AS name,
         et.category AS category,
+        et.difficulty AS difficulty,
         et.target_sets AS sets,
         et.target_reps AS reps,
         et.creator_id AS creator_id,
@@ -93,6 +95,7 @@ def get_exercise_templates(user_id: int) -> list[dict]:
         et.creator_id AS creator_id,
         et.name AS name,
         et.category AS category,
+        et.difficulty AS difficulty,
         et.target_sets AS sets,
         et.target_reps AS reps,
         u.username AS creator_name,
@@ -127,6 +130,7 @@ def get_exercise_templates_in_workout(workout_template_id: int) -> list[dict]:
         et.id AS id,
         et.name AS name,
         et.category AS category,
+        et.difficulty AS difficulty,
         et.target_sets AS target_sets,
         et.target_reps AS target_reps,
         wet.order_index AS order_index
@@ -145,6 +149,7 @@ def get_adopted_exercise_templates(user_id: int) -> list[dict]:
         et.creator_id AS creator_id,
         et.name AS name,
         et.category AS category,
+        et.difficulty AS difficulty,
         et.target_sets AS sets,
         et.target_reps AS reps,
         u.username AS creator_name,
@@ -182,6 +187,7 @@ def find_exercise_templates_by_category(category: str) -> list[dict]:
         et.id AS id,
         et.name AS name,
         et.category AS category,
+        et.difficulty AS difficulty,
         et.target_sets AS sets,
         et.target_reps AS reps,
         et.creator_id AS creator_id,
@@ -210,6 +216,7 @@ def find_exercise_templates_by_name(name: str) -> list[dict]:
         et.id AS id,
         et.name AS name,
         et.category AS category,
+        et.difficulty AS difficulty,
         et.target_sets AS sets,
         et.target_reps AS reps,
         et.creator_id AS creator_id,
@@ -290,21 +297,22 @@ def get_exercise_logs(user_id: int) -> list[dict]:
     """
     return database.query(sql, [user_id])
 
-def update_exercise_template(user_id: int, template_id: int, name: str, category: str, target_sets: int, target_reps: int):
+def update_exercise_template(user_id: int, template_id: int, name: str, category: str, difficulty: str, target_sets: int, target_reps: int):
     sql = "SELECT root_id FROM exercise_template WHERE creator_id = ? AND id = ?"
     r = database.query(sql, [user_id, template_id])
     if not r:
         return
     root_id = r[0]["root_id"]
     sql = """
-    INSERT INTO exercise_template (creator_id, root_id, name, category, target_sets, target_reps)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO exercise_template (creator_id, root_id, name, category, difficulty, target_sets, target_reps)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
     """
     next_version_id = database.execute_insert(sql, [
         user_id,
         root_id,
         name.strip(),
         category.strip() or None,
+        difficulty,
         target_sets,
         target_reps
     ])

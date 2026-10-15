@@ -14,19 +14,33 @@
 	<h2>Muokkaa harjoituspohjaa</h2>
 	<form action="{{ url_for('post_edit_exercise_template', template_id = template.id) }}" method="POST" class="form-stacked">
 		<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
-        <label for="name">Harjoituksen nimi:</label>
+        
+		<label for="name">Harjoituksen nimi:</label>
 		<input type="text" id="name" name="name" value="{{ template.name }}" required>
+		
 		<label for="category">Liikeryhmä:</label>
         <input type="text" id="category" name="category" value="{{ template.category or "" }}">
+	
+		<label for="difficulty">Vaikeustaso:</label>
+		<select id="difficulty" name="difficulty">
+			<option value="BEGINNER" {% if template.difficulty == 'BEGINNER' %}selected{% endif %}>
+				Aloittelija
+			</option>
+			<option value="INTERMEDIATE" {% if template.difficulty == 'INTERMEDIATE' %}selected{% endif %}>
+				Keskitaso
+			</option>
+			<option value="ADVANCED" {% if template.difficulty == 'ADVANCED' %}selected{% endif %}>
+				Edistynyt
+			</option>
+		</select>
+
 		<label for="target_sets">Sarjatavoite:</label>
 		<input type="number" id="target_sets" name="target_sets" min="1" value="{{ template.sets }}" required>
-        <label for="target_reps">Toistotavoite:</label>
+        
+		<label for="target_reps">Toistotavoite:</label>
 		<input type="number" id="target_reps" name="target_reps" min="1" value="{{ template.reps }}" required>
-        <button type="submit" class="btn">Päivitä</button>	
+        
+		<button type="submit" class="btn">Päivitä</button>	
     </form>
-	{% if template.has_previous_version %}
-	<br>
-	<a href="{{ url_for('get_exercise_template', template_id = template.id) }}">Edellinen versio</a>
-	{% endif %}
 </div>
 {% endblock %}
