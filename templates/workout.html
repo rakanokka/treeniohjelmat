@@ -51,8 +51,16 @@
 			<div class="item-extra">
 				<form action="{{ url_for('post_workout', workout_id = workout.id) }}" method="POST" class="form-stacked">
 					<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
+					
 					<label for="sets-{{wet.id}}">Sarjat:</label>
-					<input type="number" id="sets-{{wet.id}}" name="sets" min="1" value="{{ wet.target_sets }}" required>
+					<input 
+						type="number" 
+						id="sets-{{wet.id}}" 
+						name="sets" 
+						min="1" 
+						value="{{ wet.target_sets }}" 
+						max="{{ form_input.max_sets }}"
+						required>
 
 					<label for="reps-{{wet.id}}">Toistot:</label>
 					<input
@@ -60,8 +68,8 @@
 						type="text" 
 						id="reps-{{wet.id}}" 
 						name="reps" 
-						value="{% for _ in range(wet.target_sets) %}{{ wet.target_reps }}{% if not loop.last %},{% endif %}{% endfor %}" 
-						placeholder="Syötä pilkulla erotettuna listana..."
+						value="{% for _ in range(wet.target_sets) %}{{ wet.target_reps }}{% if not loop.last %};{% endif %}{% endfor %}" 
+						placeholder="Syötä puolipisteellä erotettuna listana..."
 						required>
 					
 					<label for="weights-{{wet.id}}">Painot:</label>
@@ -70,7 +78,7 @@
 						type="text" 
 						id="weights-{{wet.id}}" 
 						name="weights" 
-						placeholder="Syötä pilkulla erotettuna listana..."
+						placeholder="Syötä puolipisteellä erotettuna listana..."
 						required>
 					
 					<input type="hidden" name="wet_name" value="{{ wet.name }}">	

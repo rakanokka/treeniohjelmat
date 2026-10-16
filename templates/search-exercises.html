@@ -11,14 +11,18 @@
 </div>
 <div class="page-container">
 	<h2>Etsi harjoituspohjia</h2>
+	<br>
+	<br>
 	<div class="exercises-search-container ch">
-		<form action="{{ url_for('get_exercises_search') }}" method="GET" class="search-input">
+		<p>Tuetut vaikeustasot: Aloittelija, Keskitaso, Edistynyt</p>
+		<form action="{{ url_for('get_exercises_search') }}" method="GET" class="search-input">	
 			<select name="type" class="search-select">
 				<option value="name" {% if search_type == 'name' %}selected{% endif %}>Nimi</option>
 				<option value="category" {% if search_type == 'category' %}selected{% endif %}>Ryhmä</option>
-			</select>
+				<option value="difficulty" {% if search_type == 'difficulty' %}selected{% endif %}>Vaikeustaso</option>
+			</select>	
 			<input type="text" name="query" value="{{ search_query }}" placeholder="Hakusana..." required>
-			<button class="btn" type="submit">Hae</button>
+			<button class="btn" type="submit">Hae hakusanalla</button>
 		</form>
 	</div>
 	{% if templates %}

@@ -210,6 +210,35 @@ def find_exercise_templates_by_category(category: str) -> list[dict]:
     """
     return database.query(sql, [f"%{category.strip()}%"])
 
+def find_exercise_templates_by_difficulty(difficulty: str) -> list[dict]:
+    sql = """
+    SELECT 
+        et.id AS id,
+        et.name AS name,
+        et.category AS category,
+        et.difficulty AS difficulty,
+        et.target_sets AS sets,
+        et.target_reps AS reps,
+        et.creator_id AS creator_id,
+        u.username AS creator_name,
+        COUNT(DISTINCT e.id) AS exercise_count,
+        COUNT(DISTINCT uet_all.user_id) AS user_count
+    FROM exercise_template et
+    JOIN "user" u 
+        ON et.creator_id = u.id
+    LEFT JOIN exercise_template et_all 
+        ON et.root_id = et_all.root_id
+    LEFT JOIN user_exercise_template uet_all 
+        ON et_all.id = uet_all.exercise_template_id
+    LEFT JOIN exercise_log e 
+        ON et.id = e.exercise_template_id
+    WHERE et.next_version_id IS NULL 
+        AND et.difficulty = ?
+    GROUP BY et.id
+    ORDER BY et.name ASC
+    """
+    return database.query(sql, [difficulty.strip()])
+
 def find_exercise_templates_by_name(name: str) -> list[dict]:
     sql = """
     SELECT 

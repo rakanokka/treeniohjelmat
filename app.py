@@ -42,16 +42,56 @@ DIFFICULTY_MAP = {
     "ADVANCED": "Edistynyt"
 }
 
-MAX_INPUT_LENGTH = 100
-MAX_COMMENT_LENGTH = 1000
-MAX_TAG_LENGTH = 50
-MAX_SETS = 100
-MAX_REPS = 100
-MAX_WEIGHT = 1000.0
+FORM_INPUT_CONSTRAINTS = {
+    "max_name_length": 50,
+    "max_category_length": 30,
+    "min_password_length": 8,
+    "max_password_length": 128,
+    "max_note_length": 1000,
+    "max_comment_length": 2000,
+    "max_sets": 100,
+    "max_reps": 100,
+    "max_weight": 1000.0
+}
 
 EMAIL_REGEX = r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"
+POSITIVE_INT_LIST_SEMICOLON_REGEX = r"^\s*[1-9]\d*(?:\s*;\s*[1-9]\d*)*\s*$"
+FLOAT_LIST_SEMICOLON_REGEX =r"^\s*-?\d+(?:.\d+)?(?:\s*;\s*-?\d+(?:.\d+)?)*\s*$"
 
 # Common util functions
+
+def validate_positive_int(input_value: str, max_value: int) -> int | None:
+    try:
+        v = int(input_value.strip())
+        if v > max_value:
+            return None
+        return v
+    except Exception:
+        return None
+
+def validate_positive_int_list_format(input_value: str) -> bool:
+    return bool(re.match(POSITIVE_INT_LIST_SEMICOLON_REGEX, input_value))
+
+def validate_positive_int_list_values(input_list: list[str], max_value: int) -> list[int]:
+    result: list[int] = []
+    for el in input_list:
+        v = int(el.strip())
+        if v > max_value:
+            return []
+        result.append(v)
+    return result 
+
+def validate_float_list_format(input_value: str) -> bool:
+    return bool(re.match(FLOAT_LIST_SEMICOLON_REGEX, input_value))
+
+def validate_float_list_values(input_list: list[str], max_value: int) -> list[float]:
+    result: list[float] = []
+    for el in input_list:
+        v = float(el.strip())
+        if abs(v) > max_value:
+            return []
+        result.append(v)
+    return result
 
 def is_valid_email(email: str) -> bool:
     if not email:
@@ -69,11 +109,11 @@ def push_error_messages(messages: list[str]):
     for message in messages:
         flash(f"[VIRHE] {message}")
 
-def get_hidden_input(name: str) -> str:
+def get_form_input(name: str) -> str:
     return request.form[name]
 
-def get_hidden_input_as_int(name: str) -> int:
-    return int(get_hidden_input(name))
+def get_form_input_as_int(name: str) -> int:
+    return int(get_form_input(name))
 
 def check_csrf() -> bool:
     if not("csrf_token" in request.form):
@@ -87,6 +127,153 @@ def error_page(error_code: int) -> str:
     return render_template("error.html",
                            error_message = error_message,
                            error_code = error_code)
+
+# Exercise valdation utils
+
+class ExerciseTemplateFormData(NamedTuple):
+    error_messages: list[str]
+    name: str
+    category: str
+    difficulty: str
+    sets: int
+    reps: int
+
+def validate_exercise_template_form() -> ExerciseTemplateFormData:
+    max_name_length =  FORM_INPUT_CONSTRAINTS["max_name_length"]
+    max_category_length =  FORM_INPUT_CONSTRAINTS["max_category_length"]
+    max_sets = FORM_INPUT_CONSTRAINTS["max_sets"]
+    max_reps = FORM_INPUT_CONSTRAINTS["max_reps"]
+    
+
+    error_messages: list[str] = []
+    name = request.form.get("name", "").strip()
+    if not name:
+        error_messages.append("Harjoituksella on oltava nimi")
+    elif len(name) > max_name_length:
+        error_messages.append(f"Harjoituksen nimen pituus saa olla enintään {max_name_length} merkkiä")
+    
+    print(len(name), max_name_length)
+    category = request.form.get("category", "").strip() 
+    if len(category) > max_category_length:
+        error_messages.append(f"Ryhmän pituus saa olla enintään {max_category_length} merkkiä")
+
+    target_sets = get_form_input("target_sets")
+    sets = validate_positive_int(target_sets, max_sets)
+    if not sets:
+        error_messages.append(f"Sarjojen määrän on oltava kokonaisluku välillä 1 ja {max_sets}")
+    
+    target_reps = get_form_input("target_reps")
+    reps = validate_positive_int(target_reps, max_reps)
+    if not reps:
+        error_messages.append(f"Toistojen määrän on oltava kokonaisluku välillä 1 ja {max_reps}")
+    
+    difficulty = request.form.get("difficulty", "INTERMEDIATE")
+    return ExerciseTemplateFormData(error_messages, name, category, difficulty, sets or 0, reps or 0)
+
+# Workout valdation utils 
+
+class WorkoutLogExercisesData(NamedTuple):
+    error_messages: list[str]
+    sets: int
+    reps: list[int]
+    weights: list[float]
+
+def validate_workout_exercise() -> WorkoutLogExercisesData:
+    max_sets = FORM_INPUT_CONSTRAINTS["max_sets"]
+    max_reps = FORM_INPUT_CONSTRAINTS["max_reps"]
+    max_weight = FORM_INPUT_CONSTRAINTS["max_weight"]
+    error_messages: list[str] = []
+    
+    sets_input_str = get_form_input("sets")
+    sets = validate_positive_int(sets_input_str, max_sets)
+    if not sets:
+        error_messages.append(f"Sarjojen määrän on oltava kokonaisluku välillä 1 ja {max_sets}")
+
+    reps = []
+    reps_input_str = get_form_input("reps")
+    if validate_positive_int_list_format(reps_input_str):
+        reps_input_list = reps_input_str.split(";")
+        if len(reps_input_list) != sets:
+            error_messages.append("Toistolistan pituuden on täsmättävä sarjojen määrän kanssa")
+        reps = validate_positive_int_list_values(reps_input_list, max_reps)
+        if not reps:
+            error_messages.append(f"Toistojen on oltava lista kokonaislukuja välillä 1 ja {max_sets}")     
+    else:
+        error_messages.append(f"Toistojen on oltava puolipisteellä erotettu lista kokonaislukuja")
+
+    # Negative weights are supported. They may be used for machine assisted weights
+    weights = []
+    weights_input_str = get_form_input("weights")
+    if validate_float_list_format(weights_input_str):
+        weights_input_list = weights_input_str.split(";") 
+        if len(weights_input_list) != sets:
+            error_messages.append("Painolistan pituuden on täsmättävä sarjojen määrän kanssa")
+        weights = validate_float_list_values(weights_input_list, max_weight)
+        if not weights:
+            error_messages.append(f"Painojen on oltava lista lukuja välillä -{int(max_weight)} ja {int(max_weight)}")
+    else:
+        error_messages.append(f"Painojen on oltava puolipisteellä erotettu lista lukuja")
+
+    return WorkoutLogExercisesData(error_messages, sets or 0, reps, weights)
+
+class WorkoutTemplateData(NamedTuple):
+    error_messages: list[str]
+    name: str
+    description: str 
+    tags: list[str]
+
+def validate_workout_template_data(name: str, description: str, tag_inputs: list[str]) -> WorkoutTemplateData:
+    max_name_length = FORM_INPUT_CONSTRAINTS["max_name_length"]
+    max_tag_length = FORM_INPUT_CONSTRAINTS["max_category_length"]
+    
+    error_messages: list[str] = []
+    if not name:
+        error_messages.append("Treenillä on oltava nimi")
+    elif len(name) > max_name_length:
+        error_messages.append(f"Treenin nimen pituus saa olla enintään {max_name_length} merkkiä")
+    
+    if len(description) > max_name_length:
+        error_messages.append(f"Treenin kuvauksen pituus saa olla enintään {max_name_length} merkkiä")
+    
+    tags: list[str] = []
+    tag_set = set(tags)
+    error_added = 3*[False]
+    for tag_input in tag_inputs:
+        tag = tag_input.strip()
+        if not tag:
+            if not error_added[0]:
+                error_messages.append("Tyhjä luokka. Syötä luokat pilkulla erotettuna listana ilman thjiä merkkijonoja.")
+                error_added[0] = True
+            continue
+        if tag in tag_set:
+            if not error_added[1]:
+                error_messages.append("Virheellinen treenin luokitus. Luokkien on oltava uniikkeja.")
+                error_added[1] = True
+        if len(tag) > max_tag_length:
+            if not error_added[2]:
+                error_messages.append(f"Luokan pituus saa olla enintään {max_tag_length} merkkiä")
+                error_added[2] = True
+        tags.append(tag)
+        tag_set.add(tag)
+
+    return WorkoutTemplateData(error_messages, name, description, tags)
+
+def validate_workout_template_form_data() -> WorkoutTemplateData:
+    name = request.form.get("name", "").strip() 
+    desc = request.form.get("description", "").strip()
+    tags_input = request.form.get("tags", "").strip()
+    tags = tags_input.split(",") if tags_input else []
+    return validate_workout_template_data(name, desc, tags) 
+
+def validate_workout_template_session_data(session_name: str) -> WorkoutTemplateData:
+    name = session[session_name]["name"] 
+    desc = session[session_name]["description"] 
+    tags = session[session_name]["tags"] 
+    return validate_workout_template_data(name, desc, tags)
+
+def is_workout_owner(user_id, workout_id) -> bool:
+    owner_id = workouts.get_workout_log_user_id(workout_id)
+    return user_id == owner_id
 
 # Public routes
 
@@ -185,38 +372,6 @@ def get_profile(user_id: int) -> str:
                            workouts = recent_workouts,
                            favourites = favourites) 
 
-# Exercise valdation utils
-
-class ExerciseTemplateFormData(NamedTuple):
-    error_messages: list[str]
-    name: str
-    category: str
-    difficulty: str
-    sets: int
-    reps: int
-
-def validate_exercise_template_form() -> ExerciseTemplateFormData:
-    error_messages: list[str] = []
-    name = request.form.get("name", "").strip()
-    difficulty = request.form.get("difficulty", "INTERMEDIATE")
-    if not name:
-        error_messages.append("Harjoituksella on oltava nimi")
-    elif len(name) > MAX_INPUT_LENGTH:
-        error_messages.append(f"Harjoituksen nimen pituus saa olla enintään {MAX_INPUT_LENGTH} merkkiä")
-    
-    category = request.form.get("category", "").strip() 
-    if len(category) > MAX_INPUT_LENGTH:
-        error_messages.append(f"Ryhmän pituus saa olla enintään {MAX_INPUT_LENGTH} merkkiä")
-
-    sv = utils.IntValidator(request.form["target_sets"], MAX_SETS)
-    rv = utils.IntValidator(request.form["target_reps"], MAX_REPS)
-    if not sv.validate():
-        error_messages.append(f"Sarjojen määrän on oltava kokonaisluku välillä 0 < sarjat < {MAX_SETS + 1}")
-    if not rv.validate():
-        error_messages.append(f"Toistojen määrän on oltava kokonaisluku välillä 0 < toistot < {MAX_REPS + 1}")
-    
-    return ExerciseTemplateFormData(error_messages, name, category, difficulty, sv.get(), rv.get())
-
 # Routes /exercises
 
 @app.route("/exercises")
@@ -265,6 +420,7 @@ def get_exercise_templates() -> str | Any:
     my_exercises = exercises.get_exercise_templates(user_id)
     adopted_exercises = exercises.get_adopted_exercise_templates(user_id)
     return render_template("exercise-templates.html",
+                           form_input = FORM_INPUT_CONSTRAINTS,
                            my_templates = my_exercises,
                            adopted_templates = adopted_exercises,
                            difficulty_map = DIFFICULTY_MAP)
@@ -278,25 +434,25 @@ def post_exercise_templates() -> str | Any:
         return error_page(FORBIDDEN)
     if has_hidden_input_set_true("et_delete_owner"):
         # Delete owner template
-        et_id = int(request.form["template_id"])
+        et_id = get_form_input_as_int("template_id")
         exercises.delete_my_exercise_template(user_id, et_id)
         return redirect(url_for("get_exercise_templates"))
     
     if has_hidden_input_set_true("et_pop_owner"):
         # Delete last owner template
-        et_id = int(request.form["template_id"])
+        et_id = get_form_input_as_int("template_id")
         exercises.delete_my_exercise_template_latest_version(user_id, et_id)
         return redirect(url_for("get_exercise_templates"))
     
     if has_hidden_input_set_true("et_delete_adopted"):
         # Delete adopted template
-        et_id = int(request.form["template_id"])
+        et_id = get_form_input_as_int("template_id")
         exercises.delete_adopted_exercise_template(user_id, et_id)
         return redirect(url_for("get_exercise_templates"))
     
     if has_hidden_input_set_true("et_pop_adopted"):
         # Delete last adopted template (go back to previous version)
-        et_id = int(request.form["template_id"])
+        et_id = get_form_input_as_int("template_id")
         prev_version_id = exercises.get_exercise_template_previous_version_id(et_id)
         if not prev_version_id:
             return error_page(BAD_REQUEST)
@@ -305,7 +461,7 @@ def post_exercise_templates() -> str | Any:
     
     if has_hidden_input_set_true("et_next_adopted"):
         # Adopt next adopted template (next updated version)
-        et_id = int(request.form["template_id"])
+        et_id = get_form_input_as_int("template_id")
         next_version_id = exercises.get_exercise_template_next_version_id(et_id)
         if not next_version_id:
             return error_page(BAD_REQUEST)
@@ -324,6 +480,7 @@ def post_exercise_templates() -> str | Any:
                 data.difficulty, 
                 data.sets, 
                 data.reps)
+    
     return redirect(url_for("get_exercise_templates"))
 
 # Routes /exercises/templates/<id>
@@ -390,6 +547,8 @@ def find_exercise_templates_by(user_id: int, search_type: str, search_query: str
     templates = []
     if search_type == "category":
         templates = exercises.find_exercise_templates_by_category(search_query)
+    elif search_type == "difficulty":
+        templates = exercises.find_exercise_templates_by_difficulty(search_query)
     else:
         templates = exercises.find_exercise_templates_by_name(search_query)
     
@@ -410,6 +569,16 @@ def get_exercises_search() -> str | Any:
     search_type = request.args.get("type", "name")
     search_query = request.args.get("query", "").strip() 
     if search_query:
+        if search_type == "difficulty":
+            if not(search_query in DIFFICULTY_MAP.values()):
+                flash(f"[VIRHE] Virheellinen vaikeustaso \"{search_query}\"")
+                return render_template("search-exercises.html",
+                           search_type = search_type,
+                           search_query = search_query,
+                           no_search_results = False,
+                           templates = [],
+                           user_et_ids = {})
+        
         return find_exercise_templates_by(user_id, search_type, search_query)
     
     return render_template("search-exercises.html",
@@ -430,76 +599,6 @@ def post_exercises_search() -> Any:
     exercises.add_adopted_exercise_template(user_id, template_id)
     return redirect(url_for("get_exercise_templates"))
 
-# Workout valdation utils 
-
-class WorkoutLogExercisesData(NamedTuple):
-    error_messages: list[str]
-    sets: int
-    reps: list[int]
-    weights: list[float]
-
-def validate_workout_exercise() -> WorkoutLogExercisesData:
-    error_messages: list[str] = []
-    sv = utils.IntValidator(request.form["sets"], MAX_SETS)
-    if not sv.validate():
-        error_messages.append(f"Sarjojen määrän on oltava kokonaisluku 0 < sarjat < {MAX_SETS}")
-    rv = utils.IntListValidator(request.form["reps"], MAX_REPS)
-    if not rv.validate():
-        error_messages.append(f"Toistojen on oltava lista kokonaislukuja välillä 0 < toisto < {MAX_REPS + 1}")
-    # Negative weights are supported. They may indicate machine assisted weights
-    wv = utils.FloatListValidator(request.form["weights"], MAX_WEIGHT, False)
-    if not wv.validate():
-        error_messages.append(f"Painojen on oltava lista lukuja välillä -{MAX_WEIGHT} < paino < {MAX_WEIGHT}")
-    sets = sv.get()
-    reps_lst = rv.get()
-    weight_lst = wv.get()
-    if len(reps_lst) != sets:
-        error_messages.append("Toistolistan pituuden on täsmättävä sarjojen määrän kanssa")
-    if len(weight_lst) != sets:
-        error_messages.append("Painolistan pituuden on täsmättävä sarjojen määrän kanssa")
-    
-    return WorkoutLogExercisesData(error_messages, sets, reps_lst, weight_lst)
-
-class WorkoutTemplateData(NamedTuple):
-    error_messages: list[str]
-    name: str
-    description: str 
-    tags: list[str]
-
-def validate_workout_template_data(name: str, description: str, tags: list[str]) -> WorkoutTemplateData:
-    error_messages: list[str] = []
-    if not name:
-        error_messages.append("Treenillä on oltava nimi")
-    elif len(name) > MAX_INPUT_LENGTH:
-        error_messages.append(f"Treenin nimen pituus saa olla enintään {MAX_INPUT_LENGTH} merkkiä")
-
-    tag_count = len(tags)
-    tags = [t.strip() for t in tags if t.strip()]
-    tag_set = set(tags)
-    if len(tags) != tag_count:
-        error_messages.append("Virheellinen treenin luokitusmuoto. Syötä luokat pilkulla erotettuna listana.")
-    if len(tag_set) != tag_count:
-        error_messages.append("Virheellinen treenin luokitus. Luokkien on oltava uniikkeja.")
-
-    return WorkoutTemplateData(error_messages, name, description, tags)
-
-def validate_workout_template_form_data() -> WorkoutTemplateData:
-    name = request.form.get("name", "").strip() 
-    desc = request.form.get("description", "").strip()
-    tags_input = request.form.get("tags", "").strip()
-    tags = tags_input.split(",") if tags_input else []
-    return validate_workout_template_data(name, desc, tags) 
-
-def validate_workout_template_session_data(session_name: str) -> WorkoutTemplateData:
-    name = session[session_name]["name"] 
-    desc = session[session_name]["description"] 
-    tags = session[session_name]["tags"] 
-    return validate_workout_template_data(name, desc, tags)
-
-def is_workout_owner(user_id, workout_id) -> bool:
-    owner_id = workouts.get_workout_log_user_id(workout_id)
-    return user_id == owner_id
-
 # Routes /workouts
 
 @app.route("/workouts")
@@ -517,7 +616,7 @@ def post_workouts() -> str:
         return error_page(UNAUTHORIZED)
     if not check_csrf():
         return error_page(FORBIDDEN)
-    workout_id = get_hidden_input_as_int("workout_id")
+    workout_id = get_form_input_as_int("workout_id")
     workouts.delete_workout_log(user_id, workout_id) 
     workout_logs = workouts.get_workout_logs(user_id)
     return render_template("workouts.html", workouts = workout_logs)
@@ -538,6 +637,7 @@ def get_workout(workout_id: int) -> str:
     wt_id = workout["workout_template_id"]
     workout_exercise_templates = exercises.get_exercise_templates_in_workout(wt_id)
     return render_template("workout.html",
+                           form_input = FORM_INPUT_CONSTRAINTS,
                            workout = workout,
                            workout_exercises = workout_exercises,
                            workout_exercise_templates = workout_exercise_templates)
@@ -552,17 +652,19 @@ def post_workout(workout_id: int) -> Any:
     if not check_csrf():
         return error_page(FORBIDDEN)
     if has_hidden_input_set_true("wl_delete_exercise"):
-        exercise_id = get_hidden_input_as_int("exercise_id")
+        exercise_id = get_form_input_as_int("exercise_id")
         workouts.remove_exercise_from_workout_log(workout_id, exercise_id) 
         return redirect(url_for("get_workout", workout_id = workout_id))
-       
+    
+    print("post_workout")
+    
     data = validate_workout_exercise() 
     if data.error_messages:
         push_error_messages(data.error_messages) 
     else:
         # Add exercise to workout
-        name = request.form["wet_name"]
-        wet_id = int(request.form["wet_id"])
+        name = get_form_input("wet_name")
+        wet_id = get_form_input_as_int("wet_id")
         workouts.add_exercise_to_workout_log(workout_id, wet_id, name, data.reps, data.weights)
     
     return redirect(url_for("get_workout", workout_id = workout_id))
@@ -604,30 +706,30 @@ def post_workout_templates() -> Any:
     
     if has_hidden_input_set_true("wt_commit"):
         # Do workout button press
-        wt_id = get_hidden_input_as_int("wt_id")
-        name = get_hidden_input("wt_name")
-        desc = get_hidden_input("wt_desc")
+        wt_id = get_form_input_as_int("wt_id")
+        name = get_form_input("wt_name")
+        desc = get_form_input("wt_desc")
         workouts.add_workout_log(user_id, wt_id, name, desc) 
         return redirect(url_for("get_workouts"))
      
     if has_hidden_input_set_true("wt_delete_owner"):
         # Delete owner template
-        wt_id = get_hidden_input_as_int("wt_id")
+        wt_id = get_form_input_as_int("wt_id")
         workouts.delete_my_workout_template(user_id, wt_id)
     
     if has_hidden_input_set_true("wt_pop_owner"):
         # Delete last owner template
-        wt_id = get_hidden_input_as_int("wt_id")
+        wt_id = get_form_input_as_int("wt_id")
         workouts.delete_my_workout_template_latest_version(user_id, wt_id)
     
     if has_hidden_input_set_true("wt_delete_adopted"):
         # Delete adopted template
-        wt_id = get_hidden_input_as_int("wt_id")
+        wt_id = get_form_input_as_int("wt_id")
         workouts.delete_adopted_workout_template(user_id, wt_id)
     
     if has_hidden_input_set_true("wt_next_adopted"):
         # Adopt next adopted template (next updated version)
-        wt_id = get_hidden_input_as_int("wt_id")
+        wt_id = get_form_input_as_int("wt_id")
         next_version_id = workouts.get_workout_template_next_version_id(wt_id)
         if not next_version_id:
             return error_page(BAD_REQUEST)
@@ -635,7 +737,7 @@ def post_workout_templates() -> Any:
 
     if has_hidden_input_set_true("wt_pop_adopted"):
         # Delete last adopted template (go back to previous version)
-        wt_id = get_hidden_input_as_int("wt_id")
+        wt_id = get_form_input_as_int("wt_id")
         prev_version_id = workouts.get_workout_template_previous_version_id(wt_id)
         if not prev_version_id:
             return error_page(BAD_REQUEST)
@@ -668,9 +770,10 @@ def post_workout_template(template_id: int) -> Any:
         return error_page(UNAUTHORIZED)
     if not check_csrf():
         return error_page(FORBIDDEN)
+    max_comment_length = FORM_INPUT_CONSTRAINTS["max_comment_length"]
     content = request.form.get("content", "").strip()
-    if len(content) > MAX_COMMENT_LENGTH:
-        flash(f"[VIRHE] Kommentin pituus saa olla enintään {MAX_COMMENT_LENGTH} merkkiä")
+    if len(content) > max_comment_length:
+        flash(f"[VIRHE] Kommentin pituus saa olla enintään {max_comment_length} merkkiä")
     else:
         workouts.add_workout_template_comment(user_id, template_id, content)
     return redirect(url_for("get_workout_template", template_id = template_id))
@@ -690,7 +793,7 @@ def workout_template_info(session_name: str, page_prefix: str) -> str:
     return render_template(f"{page_prefix}-workout-template.html")
 
 def add_workout_template_exercise(session_name: str, page_prefix: str) -> str:       
-    exercise_id = int(request.form["et_id"])
+    exercise_id = get_form_input_as_int("et_id")
     exercise = workouts.get_exercise_template(exercise_id)
     if not exercise:
         return error_page(BAD_REQUEST)
@@ -700,7 +803,7 @@ def add_workout_template_exercise(session_name: str, page_prefix: str) -> str:
     return render_template(f"{page_prefix}-workout-template.html")
     
 def remove_workout_template_exercise(session_name: str, page_prefix: str) -> str:
-    et_index = int(request.form["et_index"])
+    et_index = get_form_input_as_int("et_index")
     del session[session_name]["exercises"][et_index]
     session.modified = True
     return render_template(f"{page_prefix}-workout-template.html")
@@ -871,6 +974,6 @@ def post_workouts_search() -> str | Any:
         return error_page(UNAUTHORIZED)
     if not check_csrf():
         return error_page(FORBIDDEN)
-    template_id = int(request.form["template_id"])
+    template_id = get_form_input_as_int("template_id")
     workouts.add_adopted_workout_template(user_id, template_id)
     return redirect(url_for("get_workout_templates"))
