@@ -85,6 +85,9 @@ footer {
 
 .link-button {
 	display: inline;
+	cursor: pointer;
+	text-decoration: underline;
+	color: blue;
 	button {
 		font-size: 14px;
 		background :none; 

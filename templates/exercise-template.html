@@ -28,7 +28,12 @@
 		<br>
 		<form action="{{ url_for('get_exercise_template', template_id = template.id) }}" method="POST" class="comment-form">
 			<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
-			<textarea name="content" placeholder="Kirjoita kommentti..." rows="3" required></textarea>
+			<textarea 
+				name="content" 
+				maxlength="{{ form_input.max_comment_length }}"
+				placeholder="Kirjoita kommentti..." 
+				rows="3" 
+				required></textarea>
 			<input type="hidden" name="is_comment" value="true">
 			<button type="submit" class="btn">Lähetä</button>
 		</form>

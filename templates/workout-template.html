@@ -56,9 +56,14 @@
 	<div class="comments-section">
 		<h3>Kommentit ({{ comments | length }})</h3>
 		<br>
-		<form action="" method="POST" class="comment-form">
+		<form action="{{ url_for('post_workout_template', template_id = template.id) }}" method="POST" class="comment-form">
 			<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
-			<textarea name="content" placeholder="Kirjoita kommentti..." rows="3" required></textarea>
+			<textarea 
+				name="content" 
+				maxlength="{{ form_input.max_comment_length }}"
+				placeholder="Kirjoita kommentti..." 
+				rows="3" 
+				required></textarea>
 			<input type="hidden" name="wt_comment" value="true">
 			<button type="submit" class="btn">Lähetä</button>
 		</form>

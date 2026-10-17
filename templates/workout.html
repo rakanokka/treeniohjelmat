@@ -28,7 +28,7 @@
 		<li style="display: flex">
 			{{e.name}} | {{e.sets}} sarjaa | {{e.reps}} toistoa | korkein sarjapaino {{ e.max_weight }} kg
 			<span style="height: 1px; width: 2rem"></span>
-			<form action="" method="POST" class="form-stacked">
+			<form action="{{ url_for('post_workout', workout_id = workout.id) }}" method="POST" class="form-stacked">
 				<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
 				<input type="hidden" name="is_delete_exercise" value="true">
 				<input type="hidden" name="exercise_id" value="{{ e.id }}">	
@@ -68,8 +68,8 @@
 						type="text" 
 						id="reps-{{wet.id}}" 
 						name="reps" 
-						value="{% for _ in range(wet.target_sets) %}{{ wet.target_reps }}{% if not loop.last %};{% endif %}{% endfor %}" 
-						placeholder="Syötä puolipisteellä erotettuna listana..."
+						value="{% for _ in range(wet.target_sets) %}{{ wet.target_reps }}{% if not loop.last %},{% endif %}{% endfor %}" 
+						placeholder="Syötä pilkulla erotettuna listana..."
 						required>
 					
 					<label for="weights-{{wet.id}}">Painot:</label>
@@ -78,7 +78,7 @@
 						type="text" 
 						id="weights-{{wet.id}}" 
 						name="weights" 
-						placeholder="Syötä puolipisteellä erotettuna listana..."
+						placeholder="Syötä pilkulla erotettuna listana..."
 						required>
 					
 					<input type="hidden" name="wet_name" value="{{ wet.name }}">	

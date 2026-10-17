@@ -63,7 +63,7 @@
 					</a>	
 				</span>
 				{% if not(wt.id in user_wt_ids) %}
-				<form action="" method="POST">
+				<form action="{{ url_for('post_workouts_search') }}" method="POST">
 					<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
 					<input type="hidden" name="template_id" value="{{ wt.id }}">
 					<button class="btn" type="submit">Ota käyttöön</button>

@@ -36,10 +36,16 @@ ERROR_MESSAGES = {
     INTERNAL_SERVER_ERROR: "Palvelimella tapahtui odottamaton virhe. Yritä hetken kuluttua uudelleen."
 }
 
-DIFFICULTY_MAP = {
+DIFFICULTY_ENUM_TO_UI = {
     "BEGINNER": "Aloittelija",
     "INTERMEDIATE": "Keskitaso",
     "ADVANCED": "Edistynyt"
+}
+
+DIFFICULTY_UI_TO_ENUM = {
+    "Aloittelija": "BEGINNER",
+    "Keskitaso": "INTERMEDIATE",
+    "Edistynyt": "ADVANCED" 
 }
 
 FORM_INPUT_CONSTRAINTS = {
@@ -55,8 +61,8 @@ FORM_INPUT_CONSTRAINTS = {
 }
 
 EMAIL_REGEX = r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"
-POSITIVE_INT_LIST_SEMICOLON_REGEX = r"^\s*[1-9]\d*(?:\s*;\s*[1-9]\d*)*\s*$"
-FLOAT_LIST_SEMICOLON_REGEX =r"^\s*-?\d+(?:.\d+)?(?:\s*;\s*-?\d+(?:.\d+)?)*\s*$"
+POSITIVE_INT_LIST_REGEX =r"^\s*[1-9]\d*(?:\s*,\s*[1-9]\d*)*\s*$" 
+FLOAT_LIST_REGEX = r"^\s*-?\d+(?:\.\d+)?(?:\s*,\s*-?\d+(?:\.\d+)?)*\s*$"
 
 # Common util functions
 
@@ -70,7 +76,7 @@ def validate_positive_int(input_value: str, max_value: int) -> int | None:
         return None
 
 def validate_positive_int_list_format(input_value: str) -> bool:
-    return bool(re.match(POSITIVE_INT_LIST_SEMICOLON_REGEX, input_value))
+    return bool(re.match(POSITIVE_INT_LIST_REGEX, input_value))
 
 def validate_positive_int_list_values(input_list: list[str], max_value: int) -> list[int]:
     result: list[int] = []
@@ -82,7 +88,7 @@ def validate_positive_int_list_values(input_list: list[str], max_value: int) -> 
     return result 
 
 def validate_float_list_format(input_value: str) -> bool:
-    return bool(re.match(FLOAT_LIST_SEMICOLON_REGEX, input_value))
+    return bool(re.match(FLOAT_LIST_REGEX, input_value))
 
 def validate_float_list_values(input_list: list[str], max_value: int) -> list[float]:
     result: list[float] = []
@@ -144,7 +150,6 @@ def validate_exercise_template_form() -> ExerciseTemplateFormData:
     max_sets = FORM_INPUT_CONSTRAINTS["max_sets"]
     max_reps = FORM_INPUT_CONSTRAINTS["max_reps"]
     
-
     error_messages: list[str] = []
     name = request.form.get("name", "").strip()
     if not name:
@@ -152,7 +157,6 @@ def validate_exercise_template_form() -> ExerciseTemplateFormData:
     elif len(name) > max_name_length:
         error_messages.append(f"Harjoituksen nimen pituus saa olla enintään {max_name_length} merkkiä")
     
-    print(len(name), max_name_length)
     category = request.form.get("category", "").strip() 
     if len(category) > max_category_length:
         error_messages.append(f"Ryhmän pituus saa olla enintään {max_category_length} merkkiä")
@@ -192,27 +196,27 @@ def validate_workout_exercise() -> WorkoutLogExercisesData:
     reps = []
     reps_input_str = get_form_input("reps")
     if validate_positive_int_list_format(reps_input_str):
-        reps_input_list = reps_input_str.split(";")
+        reps_input_list = reps_input_str.split(",")
         if len(reps_input_list) != sets:
             error_messages.append("Toistolistan pituuden on täsmättävä sarjojen määrän kanssa")
         reps = validate_positive_int_list_values(reps_input_list, max_reps)
         if not reps:
             error_messages.append(f"Toistojen on oltava lista kokonaislukuja välillä 1 ja {max_sets}")     
     else:
-        error_messages.append(f"Toistojen on oltava puolipisteellä erotettu lista kokonaislukuja")
+        error_messages.append(f"Virheellinen syöte. Toistojen on oltava pilkulla erotettu lista kokonaislukuja")
 
     # Negative weights are supported. They may be used for machine assisted weights
     weights = []
     weights_input_str = get_form_input("weights")
     if validate_float_list_format(weights_input_str):
-        weights_input_list = weights_input_str.split(";") 
+        weights_input_list = weights_input_str.split(",") 
         if len(weights_input_list) != sets:
-            error_messages.append("Painolistan pituuden on täsmättävä sarjojen määrän kanssa")
+            error_messages.append("Painolistan pituuden on täsmättävä sarjojen määrän kanssa. Käytä murtoluvussa desimaalipistettä")
         weights = validate_float_list_values(weights_input_list, max_weight)
         if not weights:
             error_messages.append(f"Painojen on oltava lista lukuja välillä -{int(max_weight)} ja {int(max_weight)}")
     else:
-        error_messages.append(f"Painojen on oltava puolipisteellä erotettu lista lukuja")
+        error_messages.append(f"Virheellinen syöte. Painojen on oltava pilkulla erotettu lista lukuja")
 
     return WorkoutLogExercisesData(error_messages, sets or 0, reps, weights)
 
@@ -224,6 +228,7 @@ class WorkoutTemplateData(NamedTuple):
 
 def validate_workout_template_data(name: str, description: str, tag_inputs: list[str]) -> WorkoutTemplateData:
     max_name_length = FORM_INPUT_CONSTRAINTS["max_name_length"]
+    max_note_length = FORM_INPUT_CONSTRAINTS["max_note_length"]
     max_tag_length = FORM_INPUT_CONSTRAINTS["max_category_length"]
     
     error_messages: list[str] = []
@@ -232,8 +237,8 @@ def validate_workout_template_data(name: str, description: str, tag_inputs: list
     elif len(name) > max_name_length:
         error_messages.append(f"Treenin nimen pituus saa olla enintään {max_name_length} merkkiä")
     
-    if len(description) > max_name_length:
-        error_messages.append(f"Treenin kuvauksen pituus saa olla enintään {max_name_length} merkkiä")
+    if len(description) > max_note_length:
+        error_messages.append(f"Treenin kuvauksen pituus saa olla enintään {max_note_length} merkkiä")
     
     tags: list[str] = []
     tag_set = set(tags)
@@ -297,7 +302,8 @@ def get_register() -> str:
                            username = "",
                            email = "",
                            password1 = "",
-                           password2 = "")
+                           password2 = "",
+                           form_input = FORM_INPUT_CONSTRAINTS)
 
 @app.route("/register", methods = ["POST"])
 def post_register() -> str | Any:
@@ -305,11 +311,22 @@ def post_register() -> str | Any:
     email = request.form.get("email", "").strip()
     password1 = request.form.get("password1", "").strip()
     password2 = request.form.get("password2", "").strip()
+
     error_messages: list[str] = []
-    
+    max_name_length = FORM_INPUT_CONSTRAINTS["max_name_length"]
+    min_password_length = FORM_INPUT_CONSTRAINTS["min_password_length"]
+    max_password_length = FORM_INPUT_CONSTRAINTS["max_password_length"]
+    if not username:
+        error_messages.append("Käyttäjänimi ei saa olla tyhjä")
+    elif len(username) > max_name_length:
+        error_messages.append(f"Käyttäjänimen pituuden tulee olla enintään {max_name_length} merkkiä")
+
     if password1 != password2:
         error_messages.append("Salasanat eivät täsmää")
-    
+
+    if not(min_password_length <= len(password1) <= max_password_length):
+        error_messages.append(f"Salasanan pituuden tulee olla {min_password_length}-{max_password_length} merkkiä")
+
     if not is_valid_email(email):
         error_messages.append("Sähköpostiosoite on virheellinen")
     
@@ -319,7 +336,8 @@ def post_register() -> str | Any:
                                username = username,
                                email = email,
                                password1 = password1,
-                               password2 = password2)
+                               password2 = password2,
+                               form_input = FORM_INPUT_CONSTRAINTS)
     
     if not users.add_user(username, email, password1):
         flash("[VIRHE] Käyttäjätunnus tai sähköpostiosoite on varattu")
@@ -327,7 +345,8 @@ def post_register() -> str | Any:
                                username = username,
                                email = email,
                                password1 = password1,
-                               password2 = password2)
+                               password2 = password2,
+                               form_input = FORM_INPUT_CONSTRAINTS)
     
     return redirect(url_for("get_home"))
 
@@ -389,7 +408,7 @@ def post_exercises() -> str:
         return error_page(UNAUTHORIZED)
     if not check_csrf():
         return error_page(FORBIDDEN)
-    exercise_id = int(str(request.form.get("exercise_id")))
+    exercise_id = get_form_input_as_int("exercise_id")
     exercises.delete_exercise_log(user_id, exercise_id)
     exercise_logs = exercises.get_exercise_logs(user_id)
     return render_template("exercises.html", exercises = exercise_logs)
@@ -423,7 +442,7 @@ def get_exercise_templates() -> str | Any:
                            form_input = FORM_INPUT_CONSTRAINTS,
                            my_templates = my_exercises,
                            adopted_templates = adopted_exercises,
-                           difficulty_map = DIFFICULTY_MAP)
+                           difficulty_map = DIFFICULTY_ENUM_TO_UI)
 
 @app.route("/exercises/templates", methods = ["POST"])
 def post_exercise_templates() -> str | Any:
@@ -495,8 +514,9 @@ def get_exercise_template(template_id: int) -> str:
     comments = exercises.get_excercise_template_comments(template_id)
     return render_template("exercise-template.html",
                            template = template,
-                           difficulty_map = DIFFICULTY_MAP,
-                           comments = comments)
+                           difficulty_map = DIFFICULTY_ENUM_TO_UI,
+                           comments = comments,
+                           form_input = FORM_INPUT_CONSTRAINTS)
 
 @app.route("/exercises/templates/<int:template_id>", methods = ["POST"])
 def post_exercise_template(template_id: int) -> Any:
@@ -505,9 +525,16 @@ def post_exercise_template(template_id: int) -> Any:
         return error_page(UNAUTHORIZED)
     if not check_csrf():
         return error_page(FORBIDDEN)
+    
+    max_comment_length = FORM_INPUT_CONSTRAINTS["max_comment_length"]
     content = request.form.get("content", "").strip()
-    if len(content) > MAX_COMMENT_LENGTH:
-        flash(f"[VIRHE] Kommentin pituus saa olla enintään {MAX_COMMENT_LENGTH} merkkiä")
+    error_messages: list[str] = []
+    if not content:
+        error_messages.append(f"Kommentti ei saa olla tyhjä")
+    elif len(content) > max_comment_length:
+        error_messages.append(f"Kommentin pituus saa olla enintään {max_comment_length} merkkiä")
+    if error_messages:
+        push_error_messages(error_messages)
     else:
         exercises.add_excercise_template_comment(user_id, template_id, content)
     return redirect(url_for("get_exercise_template", template_id = template_id))
@@ -523,7 +550,9 @@ def get_edit_exercise_template(template_id: int) -> str:
     if user_id != creator_id:
         return error_page(FORBIDDEN)
     template = exercises.get_exercise_template(template_id)
-    return render_template("edit-exercise-template.html", template = template)
+    return render_template("edit-exercise-template.html", 
+                           template = template,
+                           form_input = FORM_INPUT_CONSTRAINTS)
 
 @app.route("/exercises/templates/edit/<int:template_id>", methods = ["POST"])
 def post_edit_exercise_template(template_id: int) -> Any:
@@ -548,7 +577,8 @@ def find_exercise_templates_by(user_id: int, search_type: str, search_query: str
     if search_type == "category":
         templates = exercises.find_exercise_templates_by_category(search_query)
     elif search_type == "difficulty":
-        templates = exercises.find_exercise_templates_by_difficulty(search_query)
+        difficulty = DIFFICULTY_UI_TO_ENUM[search_query]
+        templates = exercises.find_exercise_templates_by_difficulty(difficulty)
     else:
         templates = exercises.find_exercise_templates_by_name(search_query)
     
@@ -558,7 +588,7 @@ def find_exercise_templates_by(user_id: int, search_type: str, search_query: str
                            search_query = search_query,
                            no_search_results = len(templates) == 0,
                            templates = templates,
-                           difficulty_map = DIFFICULTY_MAP,
+                           difficulty_map = DIFFICULTY_ENUM_TO_UI,
                            user_et_ids = set(user_et_ids))
 
 @app.route("/exercises/search")
@@ -570,7 +600,7 @@ def get_exercises_search() -> str | Any:
     search_query = request.args.get("query", "").strip() 
     if search_query:
         if search_type == "difficulty":
-            if not(search_query in DIFFICULTY_MAP.values()):
+            if not(search_query in DIFFICULTY_ENUM_TO_UI.values()):
                 flash(f"[VIRHE] Virheellinen vaikeustaso \"{search_query}\"")
                 return render_template("search-exercises.html",
                            search_type = search_type,
@@ -595,7 +625,7 @@ def post_exercises_search() -> Any:
         return error_page(UNAUTHORIZED)
     if not check_csrf():
         return error_page(FORBIDDEN)
-    template_id = int(str(request.form.get("template_id")))
+    template_id = get_form_input_as_int("template_id")
     exercises.add_adopted_exercise_template(user_id, template_id)
     return redirect(url_for("get_exercise_templates"))
 
@@ -655,9 +685,7 @@ def post_workout(workout_id: int) -> Any:
         exercise_id = get_form_input_as_int("exercise_id")
         workouts.remove_exercise_from_workout_log(workout_id, exercise_id) 
         return redirect(url_for("get_workout", workout_id = workout_id))
-    
-    print("post_workout")
-    
+     
     data = validate_workout_exercise() 
     if data.error_messages:
         push_error_messages(data.error_messages) 
@@ -666,7 +694,7 @@ def post_workout(workout_id: int) -> Any:
         name = get_form_input("wet_name")
         wet_id = get_form_input_as_int("wet_id")
         workouts.add_exercise_to_workout_log(workout_id, wet_id, name, data.reps, data.weights)
-    
+
     return redirect(url_for("get_workout", workout_id = workout_id))
 
 # Routes /workouts/templates
@@ -761,7 +789,8 @@ def get_workout_template(template_id: int) -> str:
                            template = template,
                            tags = tags,
                            exercises = workout_exercises,
-                           comments = comments)
+                           comments = comments,
+                           form_input = FORM_INPUT_CONSTRAINTS)
 
 @app.route("/workouts/templates/<int:template_id>", methods = ["POST"])
 def post_workout_template(template_id: int) -> Any:
@@ -770,10 +799,16 @@ def post_workout_template(template_id: int) -> Any:
         return error_page(UNAUTHORIZED)
     if not check_csrf():
         return error_page(FORBIDDEN)
+    
     max_comment_length = FORM_INPUT_CONSTRAINTS["max_comment_length"]
     content = request.form.get("content", "").strip()
-    if len(content) > max_comment_length:
-        flash(f"[VIRHE] Kommentin pituus saa olla enintään {max_comment_length} merkkiä")
+    error_messages: list[str] = []
+    if not content:
+        error_messages.append("Kommentti ei saa olla tyhjä")
+    elif len(content) > max_comment_length:
+        error_messages.append(f"Kommentin pituus saa olla enintään {max_comment_length} merkkiä")
+    if error_messages:
+        push_error_messages(error_messages)
     else:
         workouts.add_workout_template_comment(user_id, template_id, content)
     return redirect(url_for("get_workout_template", template_id = template_id))
@@ -824,13 +859,15 @@ def get_create_workout_template() -> str:
         "exercises": [],
         "my_templates": [dict(et) for et in my_exercise_templates]
     }
-    return render_template("create-workout-template.html")
+    return render_template("create-workout-template.html",
+                           form_input = FORM_INPUT_CONSTRAINTS)
 
 def submit_create_workout_template(user_id: int) -> str | Any:                          
     data = validate_workout_template_session_data("wtc")
     if data.error_messages:
         push_error_messages(data.error_messages)
-        return render_template("create-workout-template.html")
+        return render_template("create-workout-template.html",
+                               form_input = FORM_INPUT_CONSTRAINTS)
     
     exercise_ids = [int(e["exercise_template_id"]) for e in session["wtc"]["exercises"]]
     workouts.add_my_workout_template(user_id, data.name, data.description, data.tags, exercise_ids)
@@ -879,13 +916,15 @@ def get_edit_workout_template() -> str:
         "exercises": [dict(et) for et in wet],
         "my_templates": [dict(et) for et in my_exercise_templates]
     }
-    return render_template("edit-workout-template.html")
+    return render_template("edit-workout-template.html",
+                           form_input = FORM_INPUT_CONSTRAINTS)
 
 def submit_edit_workout_template(user_id: int) -> str | Any:                          
     data = validate_workout_template_session_data("wte")
     if data.error_messages:
         push_error_messages(data.error_messages)
-        return render_template("edit-workout-template.html")
+        return render_template("edit-workout-template.html",
+                               form_input = FORM_INPUT_CONSTRAINTS)
     
     template_id = session["wte"]["template_id"]
     exercise_ids = [int(e["exercise_template_id"]) for e in session["wte"]["exercises"]]

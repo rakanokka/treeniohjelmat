@@ -22,7 +22,7 @@
 			{% endif %}
 			<div class="item-extra">
 				<span>
-					<form action="" method="POST" class="form-stacked">
+					<form action="{{ url_for('post_exercises') }}" method="POST" class="form-stacked">
 						<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
 						<input type="hidden" name="exercise_id" value="{{ e.id }}">	
 						<button type="submit" class="btn">Poista</button>	

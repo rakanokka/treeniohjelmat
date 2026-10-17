@@ -14,19 +14,24 @@
 	<br>
 	<form action="{{ url_for('post_workout_template_edit', wt_id = session.wte.template_id) }}" method="POST" class="form-stacked">
 		<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
-        <label for="name">Treenin nimi:</label>
+        
+		<label for="name">Treenin nimi:</label>
 		<input 
 			type="text" 
 			id="name" 
 			name="name" 
 			value="{{ session.wte.name }}" 
+			maxlength="{{ form_input.max_name_length }}"
 			required>
+		
 		<label for="name">Treenin kuvaus:</label>
 		<input 
 			type="text" 
 			id="description" 
 			name="description" 
+			maxlength="{{ form_input.max_note_length }}"
 			value="{{ session.wte.description }}">
+		
 		<label for="name">Treenin luokat:</label>
         <input 
 			style="width: 300px" 
@@ -35,6 +40,7 @@
 			name="tags" 
 			value="{{ session.wte.tags | join(',') }}"
 			placeholder="Syötä pilkulla erotettuna listana...">
+		
 		<input type="hidden" name="wt_edit_info" value="true">	
 		<button type="submit" class="btn">Päivitä perustiedot</button>
 	</form>

@@ -16,10 +16,21 @@
 		<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
         
 		<label for="name">Harjoituksen nimi:</label>
-		<input type="text" id="name" name="name" value="{{ template.name }}" required>
+		<input 
+			type="text" 
+			id="name" 
+			name="name" 
+			value="{{ template.name }}" 
+			maxlength="{{ form_input.max_name_length }}"
+			required>
 		
 		<label for="category">Liikeryhmä:</label>
-        <input type="text" id="category" name="category" value="{{ template.category or "" }}">
+        <input 
+			type="text"
+			id="category" 
+			name="category" 
+			value="{{ template.category or "" }}"
+			maxlength="{{ form_input.max_category_length }}">
 	
 		<label for="difficulty">Vaikeustaso:</label>
 		<select id="difficulty" name="difficulty">
@@ -35,10 +46,24 @@
 		</select>
 
 		<label for="target_sets">Sarjatavoite:</label>
-		<input type="number" id="target_sets" name="target_sets" min="1" value="{{ template.sets }}" required>
+		<input 
+			type="number" 
+			id="target_sets" 
+			name="target_sets" 
+			min="1" 
+			value="{{ template.sets }}" 
+			max="{{ form_input.max_sets }}"
+			required>
         
 		<label for="target_reps">Toistotavoite:</label>
-		<input type="number" id="target_reps" name="target_reps" min="1" value="{{ template.reps }}" required>
+		<input 
+			type="number" 
+			id="target_reps" 
+			name="target_reps" 
+			min="1" 
+			value="{{ template.reps }}" 
+			max="{{ form_input.max_reps }}"
+			required>
         
 		<button type="submit" class="btn">Päivitä</button>	
     </form>

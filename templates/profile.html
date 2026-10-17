@@ -17,7 +17,8 @@
 {% if workout_templates %}
 <ul>
 {% for wt in workout_templates %}
-<li>{{ wt.name }} {% if wt.description %}({{ wt.description }}) {% endif %}| liikkeitä: {{ wt.exercise_count }} | muilla käytössä: {{ wt.adopted_by_others_count }}</li>
+<li>
+	<a href="{{ url_for('get_workout_template', template_id = wt.id) }}">{{ wt.name }}<a> | liikkeitä: {{ wt.exercise_count }} | muilla käytössä: {{ wt.adopted_by_others_count }}</li>
 {% endfor %}
 </ul>
 {% else %}

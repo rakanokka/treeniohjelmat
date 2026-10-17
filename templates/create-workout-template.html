@@ -19,22 +19,27 @@
 			type="text" 
 			id="name" 
 			name="name" 
-			value="{{ session.wtc.name }}" 
+			value="{{ session.wtc.name }}"
+			maxlength={{ form_input.max_name_length }}
 			required>
+		
 		<label for="name">Treenin kuvaus:</label>
 		<input 
 			type="text" 
 			id="description" 
 			name="description" 
-			value="{{ session.wtc.description }}">
+			value="{{ session.wtc.description }}"
+			maxlength={{ form_input.max_note_length }}>
+		
 		<label for="name">Treenin luokat:</label>
-        <input 
+		<input 
 			style="width: 300px" 
 			type="text" 
 			id="tags" 
 			name="tags" 
 			value="{{ session.wtc.tags | join(',') }}"
 			placeholder="Syötä pilkulla erotettuna listana...">
+		
 		<input type="hidden" name="wt_create_info" value="true">	
 		<button type="submit" class="btn">Lisää perustiedot</button>
 	</form>
