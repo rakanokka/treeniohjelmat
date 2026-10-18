@@ -141,3 +141,24 @@ CREATE TABLE user_comment (
 		CASE WHEN exercise_template_id IS NOT NULL THEN 1 ELSE 0 END) = 1
 	)	
 );
+
+CREATE INDEX idx_workout_plan_creator ON workout_plan(creator_id);
+CREATE INDEX idx_workout_template_creator ON workout_template(creator_id);
+CREATE INDEX idx_workout_template_plan ON workout_template(workout_plan_id);
+
+CREATE INDEX idx_workout_log_user ON workout_log(user_id);
+CREATE INDEX idx_workout_log_template ON workout_log(workout_template_id);
+
+CREATE INDEX idx_exercise_template_creator ON exercise_template(creator_id);
+CREATE INDEX idx_exercise_template_category ON exercise_template(category);
+
+CREATE INDEX idx_workout_exercise_template_exercise ON workout_exercise_template(exercise_template_id);
+CREATE INDEX idx_exercise_log_workout ON exercise_log(workout_id);
+CREATE INDEX idx_exercise_log_template ON exercise_log(exercise_template_id);
+
+CREATE INDEX idx_exercise_set_exercise ON exercise_set(exercise_id);
+CREATE INDEX idx_workout_template_tag_tag ON workout_template_tag(tag_id);
+
+CREATE INDEX idx_user_comment_user ON user_comment(user_id);
+CREATE INDEX idx_user_comment_workout ON user_comment(workout_template_id);
+CREATE INDEX idx_user_comment_exercise ON user_comment(exercise_template_id);

@@ -37,6 +37,7 @@ ul.no-bullets {
 
 header {
 	padding: var(--pvh-app-layout);
+	background-color: white;
 	nav {
 		display: flex;
 		justify-content: space-between;
@@ -50,11 +51,12 @@ header {
 main {
 	padding: var(--pvh-app-layout);
 	flex-grow: 1;
-	border: blue 1px solid;
 }
 
 footer {
 	padding: var(--pvh-app-layout);
+	color: var(--clr-app-background);
+	background-color: #211e1d;
 }
 
 .btn {
@@ -134,20 +136,6 @@ form {
 		padding: 7px 0;
 	}
 }
-/* Register/login page styles */
-
-.auth-form-container {
-
-	.form-container {
-		
-	}
-
-	.alt-text {
-
-	}
-}
-
-/* Exercises page styles */
 
 .page-nav {
 	ul {
@@ -172,9 +160,6 @@ form {
 	gap: 2rem;
 	padding: 1rem 0;
 	border-bottom: 1px solid var(--clr-divisor);
-	.item-date {
-		
-	}
 	.item-name {
 		font-weight: 700;
 	}

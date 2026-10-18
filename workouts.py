@@ -571,7 +571,6 @@ def delete_my_workout_template(user_id: int, template_id: int):
     if not r:
         return
     root_id = r[0]["root_id"]
-    print(root_id)
     sql = "DELETE FROM workout_template WHERE creator_id = ? AND root_id = ?"
     database.execute_updel(sql, [user_id, root_id])
 

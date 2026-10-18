@@ -471,7 +471,6 @@ def post_exercise(exercise_id: int) -> Any:
     else:
         exercise_id = exercise_log["id"]
         exercises.update_exercise_log(user_id, exercise_id, name, notes)
-        flash("Harjoituksen päivitys onnistui")
 
     return redirect(url_for('get_exercise', exercise_id = exercise_id))
 

@@ -166,7 +166,7 @@
 					<form action="{{ url_for('get_exercise_templates') }}" method="POST">
 						<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
 						<input type="hidden" name="template_id" value="{{ et.id }}">
-						<input type="hidden" name="et_update_adopted" value="true">
+						<input type="hidden" name="et_next_adopted" value="true">
 						<label>Uudempi versio löytyy</label>
 						<button class="btn" type="submit">Päivitä seuraavaan</button>
 					</form>

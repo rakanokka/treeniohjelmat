@@ -58,6 +58,8 @@ Jokaisella rekisteröityneellä käyttäjällä on oma käyttäjäprofiilisivu. 
 
 Sovelluksessa käyttäjät voivat viestiä keskenään ja antaa palautetta treeni- ja harjoituspohjista. Treeni- tai harjoituspohjan sivulla näkyvät kaikki siihen liitetyt kommentit aikajärjestyksessä.
 
+> **Huom.** Sovelluksen toteutuksessa ei ole keskitytty suorituskyvyn optimointiin. Esimerkiksi käyttäjätietojen osalta oikeudet tarkastetaan sekä sovellus- että tietokantatasolla.
+
 ## Sovelluksen asennus ja käynnistäminen
 
 Sovellus on suunniteltu suoritettavaksi Linux- tai macOS-ympäristössä. Sovelluksen ajaminen Windowsilla edellyttää WSL-ympäristöä (Windows Subsystem for Linux). 
