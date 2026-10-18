@@ -220,6 +220,23 @@ def validate_workout_exercise() -> WorkoutLogExercisesData:
 
     return WorkoutLogExercisesData(error_messages, sets or 0, reps, weights)
 
+def validate_log_form_data(prefix1: str, prefix2: str) -> tuple[str, str, list[str]]:
+    name = request.form.get("name", "").strip()
+    notes = request.form.get("notes", "").strip()
+    max_name_length = FORM_INPUT_CONSTRAINTS["max_name_length"]
+    max_note_length = FORM_INPUT_CONSTRAINTS["max_note_length"]
+
+    error_messages: list[str] = []
+    if not name:
+        error_messages.append(f"{prefix1} on oltava nimi")
+    elif len(name) > max_name_length:
+        error_messages.append(f"{prefix2} nimi saa olla enintään {max_name_length} merkkiä pitkä")
+    
+    if len(notes) > max_note_length:
+        error_messages.append(f"\"{prefix2} huomiot\" saa olla enintään {max_note_length} merkkiä pitkä")
+    
+    return (name, notes, error_messages)
+
 class WorkoutTemplateData(NamedTuple):
     error_messages: list[str]
     name: str
@@ -427,7 +444,36 @@ def get_exercise(exercise_id: int) -> str:
     owner_id = workouts.get_workout_log_user_id(workout_id)
     if user_id != owner_id:
         return error_page(FORBIDDEN)
-    return render_template("exercise.html", exercise = exercise_log)
+    return render_template("exercise.html", 
+                           form_input = FORM_INPUT_CONSTRAINTS,
+                           workout_id = workout_id,
+                           exercise = exercise_log)
+
+@app.route("/exercises/<int:exercise_id>", methods = ["POST"]) 
+def post_exercise(exercise_id: int) -> Any:
+    user_id = get_auth_user()
+    if not user_id:
+        return error_page(UNAUTHORIZED)
+    if not check_csrf():
+        return error_page(FORBIDDEN)
+    
+    exercise_log = exercises.get_exercise_log(exercise_id)
+    if not exercise_log:
+        return error_page(PAGE_NOT_FOUND)
+    workout_id = exercise_log["workout_id"]
+    owner_id = workouts.get_workout_log_user_id(workout_id)
+    if user_id != owner_id:
+        return error_page(FORBIDDEN)
+    
+    name, notes, errors = validate_log_form_data("Harjoituksella", "Harjoituksen")
+    if errors:
+        push_error_messages(errors)
+    else:
+        exercise_id = exercise_log["id"]
+        exercises.update_exercise_log(user_id, exercise_id, name, notes)
+        flash("Harjoituksen päivitys onnistui")
+
+    return redirect(url_for('get_exercise', exercise_id = exercise_id))
 
 # Routes /exercises/templates
 
@@ -681,11 +727,20 @@ def post_workout(workout_id: int) -> Any:
         return error_page(FORBIDDEN)
     if not check_csrf():
         return error_page(FORBIDDEN)
-    if has_hidden_input_set_true("wl_delete_exercise"):
+    
+    if has_hidden_input_set_true("is_delete_exercise"):
         exercise_id = get_form_input_as_int("exercise_id")
         workouts.remove_exercise_from_workout_log(workout_id, exercise_id) 
         return redirect(url_for("get_workout", workout_id = workout_id))
-     
+    
+    if has_hidden_input_set_true("is_edit_workout_info"):  
+        name, notes, errors = validate_log_form_data("Treenillä", "Treenin")
+        if errors:
+            push_error_messages(errors)
+        else:
+            workouts.update_workout_log(user_id, workout_id, name, notes)
+        return redirect(url_for("get_workout", workout_id = workout_id))
+
     data = validate_workout_exercise() 
     if data.error_messages:
         push_error_messages(data.error_messages) 
@@ -825,7 +880,9 @@ def workout_template_info(session_name: str, page_prefix: str) -> str:
     session[session_name]["tags"] = data.tags
     session.modified = True
     
-    return render_template(f"{page_prefix}-workout-template.html")
+    return render_template(f"{page_prefix}-workout-template.html", 
+                           form_input = FORM_INPUT_CONSTRAINTS,
+                           difficulty_map = DIFFICULTY_ENUM_TO_UI)
 
 def add_workout_template_exercise(session_name: str, page_prefix: str) -> str:       
     exercise_id = get_form_input_as_int("et_id")
@@ -835,13 +892,17 @@ def add_workout_template_exercise(session_name: str, page_prefix: str) -> str:
     session[session_name]["exercises"].append(dict(exercise))
     session[session_name]["valid"] = True
     session.modified = True 
-    return render_template(f"{page_prefix}-workout-template.html")
+    return render_template(f"{page_prefix}-workout-template.html", 
+                           form_input = FORM_INPUT_CONSTRAINTS,
+                           difficulty_map = DIFFICULTY_ENUM_TO_UI)
     
 def remove_workout_template_exercise(session_name: str, page_prefix: str) -> str:
     et_index = get_form_input_as_int("et_index")
     del session[session_name]["exercises"][et_index]
     session.modified = True
-    return render_template(f"{page_prefix}-workout-template.html")
+    return render_template(f"{page_prefix}-workout-template.html",
+                           form_input = FORM_INPUT_CONSTRAINTS,
+                           difficulty_map = DIFFICULTY_ENUM_TO_UI)
 
 # Routes /workouts/templates/create
 
@@ -851,23 +912,33 @@ def get_create_workout_template() -> str:
     if not user_id:
         return error_page(UNAUTHORIZED)
     my_exercise_templates = exercises.get_exercise_templates(user_id)
+    adopted_exercise_templates = exercises.get_adopted_exercise_templates(user_id)
+    
+    all_templates = []
+    for et in my_exercise_templates:
+        all_templates.append(dict(et))
+    for et in adopted_exercise_templates:
+        all_templates.append(dict(et))
+    
     session["wtc"] = {
         "valid": False,
         "name": "",
         "description": "",
         "tags": [],
         "exercises": [],
-        "my_templates": [dict(et) for et in my_exercise_templates]
+        "templates": all_templates
     }
     return render_template("create-workout-template.html",
-                           form_input = FORM_INPUT_CONSTRAINTS)
+                           form_input = FORM_INPUT_CONSTRAINTS,
+                           difficulty_map = DIFFICULTY_ENUM_TO_UI)
 
 def submit_create_workout_template(user_id: int) -> str | Any:                          
     data = validate_workout_template_session_data("wtc")
     if data.error_messages:
         push_error_messages(data.error_messages)
         return render_template("create-workout-template.html",
-                               form_input = FORM_INPUT_CONSTRAINTS)
+                               form_input = FORM_INPUT_CONSTRAINTS,
+                               difficulty_map = DIFFICULTY_ENUM_TO_UI)
     
     exercise_ids = [int(e["exercise_template_id"]) for e in session["wtc"]["exercises"]]
     workouts.add_my_workout_template(user_id, data.name, data.description, data.tags, exercise_ids)
@@ -907,24 +978,34 @@ def get_edit_workout_template() -> str:
     description = wt["description"] or ""
     tags = wt["tags"].split(",") if wt["tags"] else []
     wet = workouts.get_user_workout_template_exercises(user_id, wt_id)
+    
     my_exercise_templates = exercises.get_exercise_templates(user_id)
+    adopted_exercise_templates = exercises.get_adopted_exercise_templates(user_id)
+    all_templates = []
+    for et in my_exercise_templates:
+        all_templates.append(dict(et))
+    for et in adopted_exercise_templates:
+        all_templates.append(dict(et))
+    
     session["wte"] = {
         "template_id": template_id,
         "name": name,
         "description": description,
         "tags": tags,
         "exercises": [dict(et) for et in wet],
-        "my_templates": [dict(et) for et in my_exercise_templates]
+        "templates": all_templates
     }
     return render_template("edit-workout-template.html",
-                           form_input = FORM_INPUT_CONSTRAINTS)
+                           form_input = FORM_INPUT_CONSTRAINTS,
+                           difficulty_map = DIFFICULTY_ENUM_TO_UI)
 
 def submit_edit_workout_template(user_id: int) -> str | Any:                          
     data = validate_workout_template_session_data("wte")
     if data.error_messages:
         push_error_messages(data.error_messages)
         return render_template("edit-workout-template.html",
-                               form_input = FORM_INPUT_CONSTRAINTS)
+                               form_input = FORM_INPUT_CONSTRAINTS,
+                               difficulty_map = DIFFICULTY_ENUM_TO_UI)
     
     template_id = session["wte"]["template_id"]
     exercise_ids = [int(e["exercise_template_id"]) for e in session["wte"]["exercises"]]

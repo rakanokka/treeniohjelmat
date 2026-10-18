@@ -90,18 +90,29 @@
 	<br>
 	<h2>Lisätyt harjoituspohjat</h2>
 	<div class="list-container">
-	{% for et in session.wte.my_templates %}	
+	{% for et in session.wte.templates %}	
 		<div class="list-item exercise-item">
 			<p class="bold-text">{{ et.name }}</p>
+			
+			{% if category %}
 			<p>{{ et.category }}</p>
+			{% endif %}
+
 			<div class="item-info-entry">
 				<p class="key">Sarjat:</p>	
 				<p class="value">{{ et.sets }}</p>	
 			</div>
+			
 			<div class="item-info-entry">
 				<p class="key">Toistot:</p>	
 				<p class="value">{{ et.reps }}</p>	
 			</div>
+			
+			<div class="item-info-entry">
+				<p class="key">Vaikeustaso:</p>	
+				<p class="value">{{ difficulty_map[et.difficulty] }}</p>
+			</div>			
+
 			<div class="item-extra">
 				<span>
 					<form action="{{ url_for('post_workout_template_edit', wt_id = session.wte.template_id) }}" method="POST">

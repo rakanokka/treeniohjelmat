@@ -112,33 +112,34 @@ footer {
 	}
 }
 
+form {
+	.grid-container {
+		display: grid;
+		gap: 7px;
+		&.grid-2-2 {
+			grid-template-columns: 7rem auto;
+			grid-template-rows: repeat(2, 1fr);
+		}
+		&.grid-4-2 {
+			grid-template-columns: 9rem auto;
+			grid-template-rows: repeat(4, 1fr);
+		}
+		input {
+			display: block;
+		}
+	}
+	.form-submit {
+		display: flex;
+		justify-content: center;
+		padding: 7px 0;
+	}
+}
 /* Register/login page styles */
 
 .auth-form-container {
 
 	.form-container {
-		form {
-			.grid-container {
-				display: grid;
-				gap: 7px;
-				&.grid-2-2 {
-					grid-template-columns: 7rem auto;
-					grid-template-rows: repeat(2, 1fr);
-				}
-				&.grid-4-2 {
-					grid-template-columns: 9rem auto;
-					grid-template-rows: repeat(4, 1fr);
-				}
-				input {
-					display: block;
-				}
-			}
-			.form-submit {
-				display: flex;
-				justify-content: center;
-				padding: 7px 0;
-			}
-		}
+		
 	}
 
 	.alt-text {

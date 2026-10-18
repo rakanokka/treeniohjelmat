@@ -35,7 +35,7 @@ def add_workout_exercise_template(workout_template_id: int, exercise_template_id
     sql = "INSERT INTO workout_exercise_template (workout_template_id, exercise_template_id, order_index) VALUES (?, ?, ?)"
     database.execute_insert(sql, [workout_template_id, exercise_template_id, order_index])
 
-def add_workout_log(user_id: int, workout_template_id: int, name: str, description: str):
+def add_workout_log(user_id: int, workout_template_id: int, name: str, notes: str):
     sql = """
     INSERT INTO workout_log (user_id, workout_template_id, name, notes, started_at)
     VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
@@ -44,7 +44,7 @@ def add_workout_log(user_id: int, workout_template_id: int, name: str, descripti
         user_id, 
         workout_template_id, 
         name.strip(), 
-        description.strip() or None
+        notes.strip() or None
     ])
 
 def add_exercise_to_workout(user_id: int, workout_template_id: int, exercise_template_id: int):
@@ -548,12 +548,30 @@ def update_adopted_workout_template(user_id: int, old_template_id: int, new_temp
     """
     database.execute_updel(sql, [new_template_id, user_id, old_template_id])
 
+def update_workout_log(user_id: int, workout_id: int, name: str, notes: str):
+    sql = "SELECT id FROM workout_log WHERE id = ? AND user_id = ?"
+    r = database.query(sql, [workout_id, user_id])
+    if not r:
+        return 
+    sql = """
+    UPDATE workout_log 
+    SET name = ?, notes = ? 
+    WHERE id = ? AND user_id = ?
+    """
+    database.execute_updel(sql, [
+        name.strip(),
+        notes.strip() or None,
+        workout_id,
+        user_id
+    ])
+
 def delete_my_workout_template(user_id: int, template_id: int):
     sql = "SELECT root_id FROM workout_template WHERE creator_id = ? AND id = ?"
     r = database.query(sql, [user_id, template_id])
     if not r:
         return
     root_id = r[0]["root_id"]
+    print(root_id)
     sql = "DELETE FROM workout_template WHERE creator_id = ? AND root_id = ?"
     database.execute_updel(sql, [user_id, root_id])
 

@@ -15,27 +15,27 @@ DELETE FROM workout_plan;
 
 -- Workout template INSERTS
 
-INSERT INTO workout_template (id, creator_id, name, description) VALUES 
+INSERT INTO workout_template (id, creator_id, root_id, name, description) VALUES 
 -- pekka
-(1, 1, 'Pekan Koko Keho', 'Perusvoimaa koko kropalle, keskity puhtaisiin liikeratoihin.'),
+(1, 1, 1, 'Pekan Koko Keho', 'Perusvoimaa koko kropalle, keskity puhtaisiin liikeratoihin.'),
 -- matti
-(2, 2, 'Matin Yläkeho', 'Pumppitreeni yläkropan lihaksille.'),
+(2, 2, 2, 'Matin Yläkeho', 'Pumppitreeni yläkropan lihaksille.'),
 -- teppo
-(3, 3, 'Tepon Kuntopiiri', 'Korkean sykkeen kestävyystreeni oman kehon painolla.');
+(3, 3, 3, 'Tepon Kuntopiiri', 'Korkean sykkeen kestävyystreeni oman kehon painolla.');
 
-INSERT INTO exercise_template (id, creator_id, name, category, target_sets, target_reps) VALUES 
+INSERT INTO exercise_template (id, creator_id, root_id, name, category, target_sets, target_reps) VALUES 
 -- pekka
-(1, 1, 'Kyykky', 'Jalat', 3, 8),
-(2, 1, 'Penkkipunnerrus', 'Rinta', 3, 10),
-(3, 1, 'Maastaveto', 'Selkä', 3, 5),
+(1, 1, 1, 'Kyykky', 'Jalat', 3, 8),
+(2, 1, 2, 'Penkkipunnerrus', 'Rinta', 3, 10),
+(3, 1, 3, 'Maastaveto', 'Selkä', 3, 5),
 -- matti
-(4, 2, 'Pystypunnerrus', 'Olkapäät', 4, 10),
-(5, 2, 'Leuanveto', 'Selkä', 4, 8),
-(6, 2, 'Hauiskääntö', 'Kädet', 3, 12),
+(4, 2, 4, 'Pystypunnerrus', 'Olkapäät', 4, 10),
+(5, 2, 5, 'Leuanveto', 'Selkä', 4, 8),
+(6, 2, 6, 'Hauiskääntö', 'Kädet', 3, 12),
 -- teppo
-(7, 3, 'Etunojapunnerrus', 'Rinta', 4, 15),
-(8, 3, 'Askelkyykky', 'Jalat', 3, 12),
-(9, 3, 'Lankku', 'Keskivartalo', 3, 60);
+(7, 3, 7, 'Etunojapunnerrus', 'Rinta', 4, 15),
+(8, 3, 8, 'Askelkyykky', 'Jalat', 3, 12),
+(9, 3, 9, 'Lankku', 'Keskivartalo', 3, 60);
 
 INSERT INTO workout_exercise_template (workout_template_id, exercise_template_id, order_index) VALUES 
 -- Kyykky, Penkkipunnerrus, Maastaveto -> Pekan Koko Keho

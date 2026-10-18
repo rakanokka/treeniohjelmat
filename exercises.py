@@ -361,6 +361,20 @@ def update_adopted_exercise_template(user_id: int, old_template_id: int, new_tem
     """
     database.execute_updel(sql, [new_template_id, user_id, old_template_id])
 
+def update_exercise_log(user_id: int, exercise_id: int, name: str, notes: str):
+    sql = """
+    SELECT e.id 
+    FROM exercise_log e
+    JOIN workout_log w ON e.workout_id = w.id
+    WHERE e.id = ? AND w.user_id = ?
+    """
+    r = database.query(sql, [exercise_id, user_id])
+    if not r:
+        return
+    
+    sql = "UPDATE exercise_log SET name = ?, notes = ? WHERE id = ?"
+    database.execute_updel(sql, [name.strip(), notes.strip() or None, exercise_id])
+
 def delete_my_exercise_template(user_id: int, template_id: int):
     sql = "SELECT root_id FROM exercise_template WHERE creator_id = ? AND id = ?"
     r = database.query(sql, [user_id, template_id])

@@ -13,12 +13,31 @@
 <div class="page-container">
 	<h2>Treeni</h2>
 	<p>{{ workout.started_at }}</p>
-	<ul>
-		<li>Treeni: {{ workout.name }}</li>
-		{% if workout.notes %}
-		<li>Huomiot: {{ workout.notes }}</li>
-		{% endif %}
-	<ul>
+	<div class="form-container">
+		<form action="{{ url_for('post_workout', workout_id = workout.id) }}" method="POST">
+			<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	
+			<input type="hidden" name="is_edit_workout_info" value="true">
+
+			<label for="name">Treenin nimi:</label>
+			<input 
+				type="text" 
+				id="name" 
+				name="name"
+				value="{{ workout.name }}"
+				maxlength="{{ form_input.max_name_length }}"
+				required>
+			
+			<label for="name">Huomiot:</label>
+			<input 
+				type="text" 
+				id="notes" 
+				name="notes"
+				value="{{ workout.notes or "" }}"
+				maxlength="{{ form_input.max_note_length }}">
+			
+			<button type="submit" class="btn btn-primary">Päivitä perustiedot</button>
+		</form>
+	</div>
 	<br>
 	<h2>Treenin liikkeet</h2>
 	<br>
@@ -26,7 +45,7 @@
 	<ul>
 	{% for e in workout_exercises %}	
 		<li style="display: flex">
-			{{e.name}} | {{e.sets}} sarjaa | {{e.reps}} toistoa | korkein sarjapaino {{ e.max_weight }} kg
+			<a href="{{ url_for('get_exercise', exercise_id = e.id) }}">{{ e.name }}</a> | {{e.sets}} sarjaa | {{e.reps}} toistoa | korkein sarjapaino {{ e.max_weight }} kg
 			<span style="height: 1px; width: 2rem"></span>
 			<form action="{{ url_for('post_workout', workout_id = workout.id) }}" method="POST" class="form-stacked">
 				<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">	

@@ -4,8 +4,9 @@ from werkzeug.security import check_password_hash, generate_password_hash
 def add_user(username: str, email: str, password: str) -> bool:
     try:
         pw_hash = generate_password_hash(password)
+        print(password, pw_hash)
         sql = 'INSERT INTO "user" (username, email, password_hash) VALUES (?, ?, ?)'
-        database.execute(sql, [username.strip(), email.strip(), pw_hash])
+        database.execute_insert(sql, [username.strip(), email.strip(), pw_hash])
     except Exception as e:
         print(f"SQLite Error: {e}")
         return False

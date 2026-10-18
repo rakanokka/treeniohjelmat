@@ -12,28 +12,29 @@ Rekisteröitymisen jälkeen sovellukseen kirjaudutaan sisään **Kirjaudu**-sivu
 
 Sovellukseen on myös ladattavissa valmista testidataa alustusskriptin avulla, jolloin voit kirjautua sisään valmiilla testitunnuksilla.
 
-### Treeni- ja harjoituspohjien hallinnointi
+### Treenien ja harjoitusten hallinnointi
 
-Sovelluksessa treenien rakenne pohjautuu uudelleenkäytettäviin treenipohjiin (*workout template*) ja harjoituspohjiin (*exercise template*). Voit hallinnoida niitä seuraavasti:
+Sovelluksessa treenien rakenne pohjautuu uudelleenkäytettäviin treenipohjiin (*workout template*) ja harjoituspohjiin (*exercise template*) sekä niiden toteutuksiin eli varsinaisiin treeneihin (*workout log*) ja harjoituksiin (*exercise log*).
 
-1. **Uuden treenipohjan luominen:**
-   * Luo uusi treenipohja syöttämällä sille nimi sekä mahdolliset kuvaus- ja luokitustiedot. 
-   * Treenipohja sisältää yhden tai useamman harjoituksen tavoitesarjoineen ja -toistoineen (esim. Kyykky 3 x 8), jotka tulee lisätä erikseen.[^1] Harjoituksia voi lisätä treenipohjaan kaikista itse luoduista tai muiden luomista ja omalle tilille käyttöön otetuista harjoituspohjista.
-   * Voit liittää treeniin luokitusta helpottavia tägejä (esim. `Voima`, `Yläkeho`, `Koti`). Syötetyt tägit kytketään automaattisesti treenipohjaan.
+#### Treenien ja harjoitusten lisääminen ja näyttäminen
 
-2. **Muiden käyttäjien treenipohjien selaaminen ja haku:**
-   * Voit selata kaikkia järjestelmään luotuja julkisia treenipohjia sekä ryhmitellä niitä tägien perusteella klikkaamalla mitä tahansa tägilinkkiä.
-   * Tällä hetkellä muiden käyttäjien treenipohjia voi ottaa käyttöön omalle treenilistalle hakusivun kautta nimellä hakemalla (käyttöönotto tägisuodatuksen kautta ei ole vielä mahdollista).
+Yksittäisiä harjoituksia ei voi tarkastella suoraan lisäämättä niitä treeniin. Ainoastaan treeni- ja harjoituspohjia voi tarkastella sellaisenaan. Jotta harjoitukset saadaan näkymään harjoituksien listassa, toimi seuraavasti:
 
-3. **Muokkaaminen ja poistaminen:**
-   * Voit muokata ja päivittää itse luomiasi treenipohjia sekä niiden harjoituksia ja tägejä milloin tahansa.
-   * Voit poistaa itse luomasi treenipohjan järjestelmästä tai poistaa toisen käyttäjän luoman pohjan omalta omien treenien listaltasi.
-   * **Huom.** Tällä hetkellä treeni- tai harjoituspohjan muokkaaminen tai poistaminen luojan toimesta vaikuttaa suoraan myös kaikkien niiden käyttäjien näkymiin, jotka ovat ottaneet kyseisen pohjan käyttöön. Tämä on väliaikainen toteutustapa.
+1. **Luo treenipohja:** Siirry luomaan uusi treenipohja, lisää siihen haluamasi harjoitukset ja tallenna pohja.
+2. **Luo treeni:** Mene treenipohjien näkymään ja luo/aloita treeni kyseisen pohjan pohjalta.
+3. **Lisää liikkeet:** Siirry omiin treeneihin, avaa kyseinen treeni tarkasteluun ja lisää tarvittavat liikkeet.
 
-4. **Treenin luominen treenipohjasta:**
-   * Voit aloittaa uuden treenisuorituksen suoraan treenipohjaan liitetyn **Tee treeni** -painikkeen kautta (löytyy sekä itse luoduista että käyttöön otetuista treenipohjista).
-   * Sovellus luo pohjan perusteella treenille valmiin rungon, johon voit kirjata todelliset suoritetut sarjat, toistot ja käytetyt painot.
-   * Valmiin treenin tallentaminen luo järjestelmään pysyvän treenilokin (*workout log*), jota ei enää muuteta, vaikka alkuperäistä treenipohjaa muokattaisiin myöhemmin.
+Tämän jälkeen liike päivittyy näkyviin harjoituksien listaan.
+
+#### Treenien ja harjoitusten muokkaaminen ja poistaminen
+
+Pohjiin (treeni- ja harjoituspohjat) tehdyt päivitykset ja poistot vaikuttavat vain tuleviin treeneihin. Kun muokkaat treeni- tai harjoituspohjaa, muutokset tallentuvat pohjaan eivätkä muuta jo luotujen, historiassa olevien treenien sisältöä. Samoin pohjan poistaminen poistaa sen valittavien pohjien listalta ja treenilokit säilyvät ennallaan. Treenejä voi muokata pohjan poistamisen jälkeen, mutta siihen ei voi lisätä uusia harjoituksia pohjan poistamisen jälkeen.[^1] 
+
+Sovellus käyttää pohjissa versiointia, jolla varmistetaan, etteivät muutokset tai poistot riko muiden käyttäjien treeni- tai harjoituspohjia. Muokattaessa treeni- tai harjoituspohjaa sovellus luo pohjasta uuden version. Jos toinen käyttäjä on jo ottanut pohjan käyttöön, hänen näkymissään säilyy se versio pohjasta, joka oli voimassa käyttöönottohetkellä. Sovellus ilmoittaa käyttäjälle, kun pohjalle löytyy uusi versio, ja käyttäjä voi päivittää pohjan halutessaan viimeisimpään versioon.
+
+Pohja voidaan poistaa kahdella eri tavalla:
+* **Viimeisimmän version poisto:** Jos pohjasta poistetaan vain sen viimeisin versio, pohja palautuu automaattisesti edelliseen versioonsa. Tällöin myös kyseistä pohjaa käyttävien muiden käyttäjien näkymät päivittyvät käyttämään tätä edellistä versiota.
+* **Koko pohjan poisto:** Koko pohjan poistaminen poistaa pohjan tietokannasta eikä sille voi sen jälkeen luoda treenejä tai harjoituksia. Tällöin pohja poistetaan myös muiden käyttäjien näkymästä, joilla oli pohja käytössä.
 
 ### Käyttäjäsivut
 
@@ -50,7 +51,7 @@ Jokaisella rekisteröityneellä käyttäjällä on oma käyttäjäprofiilisivu. 
    * Aikajärjestyksessä oleva lista suoritetuista treeneistä. Jokaisesta treenistä näytetään sen nimi, liikkeiden ja suoritettujen sarjojen kokonaismäärät sekä tarkka suoritusajankohta.
 
 4. **Liikepohjat harjoitusryhmittäin:**
-   * Käyttäjän luomat liikepohjat on ryhmitelty esimerkiksi lihasryhmän tai muun kategorian mukaan (esim. *Rinta*, *Selkä*).
+   * Käyttäjän luomat liikepohjat on ryhmitelty esimerkiksi lihasryhmän tai muun kategorian mukaan (esim. *Rinta*, *Selkä*). 
    * Kategoriakohtaisesti näytetään luotujen liikepohjien määrä sekä se, kuinka moneen treenipohjaan kyseisen kategorian liikkeitä on liitetty.
 
 ### Kommentointi
@@ -100,7 +101,7 @@ sqlite3 xfit_dev.db < seed_users.sql
 sqlite3 xfit_dev.db < seed_workouts.sql
 ```
 
-> **Huom.** Skriptit on ajettava tässä järjestyksessä tyhjään tietokantaan. Jälkimmäinen skripti edellyttää, että tietokannassa on vähintään kolme käyttäjää avaimilla 1, 2 ja 3. Testidata sisältää käyttäjät `pekka`, `matti` ja `teppo`, joiden kaikkien salasanaksi on määritetty merkkijono `hello`.
+> **Huom.** Skriptit on ajettava tässä järjestyksessä tyhjään tietokantaan. Jälkimmäinen skripti edellyttää, että tietokannassa on vähintään kolme käyttäjää avaimilla 1, 2 ja 3. Testidata sisältää käyttäjät `pekka`, `matti` ja `teppo`, joiden kaikkien salasanaksi on määritetty merkkijono `hello1234`.
 
 Kun riippuvuudet on asennettu, sovelluksen voi käynnistää ajamalla
 
@@ -112,4 +113,5 @@ Sovellus käynnistyy osoitteessa http://localhost:5000.
 
 ---
 
-[^1]: Nykytotetutuksessa voit tosin lisätä treenilistalle tyhjiä treenipohjia, joilla ei ole harjoituksia.
+[^1]: Harjoitusten lisääminen sallitaan sellaisissa treeneissä, jotka perustuvat toisen käyttäjän luomaan pohjaan, jota ei ole poistettu. Jos esimerkiksi poistat käyttöön otetun treenipohjan omalta tililtä, voit edelleen lisätä treeniin kyseiseen pohjaan kuuluvia liikkeitä.
+

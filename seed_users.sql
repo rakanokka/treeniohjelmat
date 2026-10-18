@@ -2,10 +2,10 @@ BEGIN TRANSACTION;
 
 DELETE FROM "user";
 
--- Each test user has the same password, "hello"
+-- Each test user has the same password, "hello1234"
 INSERT INTO "user" (id, username, email, password_hash) VALUES 
-(1, 'pekka', 'pekka@test.com', 'scrypt:32768:8:1$4ivJstmyATeYShqf$c73443bdcb67035b390ac7faec21478b7c41df1e67c3bd4a894edbd6e9c2c60d627fdd4f96b572cd802b845bd955b1e57e24ef1fed3931e919b0aca00a2548eb'),
-(2, 'matti', 'matti@test.com', 'scrypt:32768:8:1$4ivJstmyATeYShqf$c73443bdcb67035b390ac7faec21478b7c41df1e67c3bd4a894edbd6e9c2c60d627fdd4f96b572cd802b845bd955b1e57e24ef1fed3931e919b0aca00a2548eb'),
-(3, 'teppo', 'teppo@test.com', 'scrypt:32768:8:1$4ivJstmyATeYShqf$c73443bdcb67035b390ac7faec21478b7c41df1e67c3bd4a894edbd6e9c2c60d627fdd4f96b572cd802b845bd955b1e57e24ef1fed3931e919b0aca00a2548eb');
+(1, 'pekka', 'pekka@test.com', 'scrypt:32768:8:1$WcdgD5fYKaSb9pzG$3da626662426719a72e0b5bb65908e2c4ae9b2d6c86a249d4ac222cd62d1d586b446d471705d6f091f2b29a030e8e91216a105c8223f64c3612852c03afd422d'),
+(2, 'matti', 'matti@test.com', 'scrypt:32768:8:1$WcdgD5fYKaSb9pzG$3da626662426719a72e0b5bb65908e2c4ae9b2d6c86a249d4ac222cd62d1d586b446d471705d6f091f2b29a030e8e91216a105c8223f64c3612852c03afd422d'),
+(3, 'teppo', 'teppo@test.com', 'scrypt:32768:8:1$WcdgD5fYKaSb9pzG$3da626662426719a72e0b5bb65908e2c4ae9b2d6c86a249d4ac222cd62d1d586b446d471705d6f091f2b29a030e8e91216a105c8223f64c3612852c03afd422d');
 
 COMMIT;
